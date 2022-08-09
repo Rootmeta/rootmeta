@@ -1,7 +1,11 @@
-The MOST IMPORTANT thing is the fact of SIGN.
-We use "personal_sign" method only to idenfity that you are the owner of the address.
-The signature code is in the frontend project, path to /meta_community/assets/js/index.js.
-The Verify code is in the backend project, path to /meta_CommunityServer/src/com/meta/community/handler/AccountHandler.java.
+The MOST IMPORTANT thing is the fact of SIGN.  
+
+We use "personal_sign" method only to idenfity that you are the owner of the address.  
+
+The signature code is in the frontend project, path to /meta_community/assets/js/index.js.  
+
+The Verify code is in the backend project, path to /meta_CommunityServer/src/com/meta/community/handler/AccountHandler.java.  
+
 
 <!--
 **Rootmeta/rootmeta** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
