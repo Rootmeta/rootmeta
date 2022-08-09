@@ -6,7 +6,7 @@ The signature code is in the frontend project, path to /meta_community/assets/js
 
 The verify code is in the backend project, path to /meta_CommunityServer/src/com/meta/community/handler/AccountHandler.java.  
 
-Any doubt? be free to contact us: team@rootmeta.xyz.
+Any doubt? Be free to contact us: team@rootmeta.xyz.
 
 
 <!--
