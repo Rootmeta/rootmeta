@@ -1,4 +1,4 @@
-The MOST IMPORTANT thing is the fact of SIGN.  
+The MOST IMPORTANT thing you care about is the fact of SIGN.  
 
 We use "personal_sign" method only to idenfity that you are the owner of the address.  
 
