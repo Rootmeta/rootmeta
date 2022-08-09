@@ -1,0 +1,70 @@
+.container {
+	display: flex;
+	flex-direction: column;
+	background-image: url(../img/background.png);
+	background-position: center;
+	background-size: cover;
+	background-repeat: no-repeat;
+}
+.header {
+	margin-top: 60px;
+	padding: 0 100px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+.header .logo {
+	width: 268px;
+	height: 42px;
+	background-image: url(../img/index_logo.png);
+	background-position: center;
+	background-size: contain;
+	background-repeat: no-repeat;
+}
+.header .login .button {
+	width: 160px;
+	height: 40px;
+	font-size: 14px;
+	font-weight: 400;
+	border: 1px solid #ffffff;
+	border-radius: 25px;
+	color: #ffffff;
+	background-color: transparent;
+	cursor: pointer;
+}
+.bodyer {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+.bodyer .slogan {
+	font-size: 50px;
+	font-weight: 800;
+	color: #ffffff;
+	padding: 10px 0 40px 0;
+	text-align: center;
+}
+.bodyer .desc {
+	font-size: 24px;
+	color: #ffffff;
+	text-align: center;
+}
+.bodyer .login .button {
+	width: 200px;
+	height: 50px;
+	font-size: 16px;
+	font-weight: 500;
+	border: none;
+	border-radius: 25px;
+	color: #ffffff;
+	background-color: #4768ff;
+	cursor: pointer;
+}
+.bodyer .login .button:hover {
+	background-color: #4755bd;
+}
+.footer {
+	height: 60px;
+}

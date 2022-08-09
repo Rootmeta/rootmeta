@@ -1,0 +1,2535 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+<link rel="stylesheet" href="./assets/css/abs.css?t=38">
+<link rel="stylesheet" href="./assets/css/home.css?t=38">
+<title>Home</title>
+</head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1NRVYLYEEQ"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1NRVYLYEEQ');
+</script>
+<body class="theme-dark">
+
+<div v-cloak id="app" class="container modal-background" :class="{'modal-open': userSetting}" @click="clickContainer">
+	<div class="side guilds">
+		<div class="tooltip">
+			<div class="guild home active" @click="clickHome">
+				<span class="pill"></span>
+				<img class="img" :src="user && user.avatar ? user.avatar : '/assets/img/user_avatar.png'" />
+				<img class="nft-icon" style="left:10px;width:18px;height:18px;" v-if="user && user.nftavatar.value==1" src="./assets/img/nft_icon.png" />
+				<div class="notice" :class="{'show':homeNotice>0}" v-text="homeNotice"></div>
+			</div>
+			<div class="tooltip-text black right" v-t="'common.home'"></div>
+		</div>
+		<div class="tooltip" v-if="false">
+			<div class="guild tweets" @click="clickTweets">
+				<span class="pill"></span>
+				<img class="img" :src="'./assets/img/demo_logo.png'"></img>
+			</div>
+			<div class="tooltip-text black right" v-t="'common.tweets'"></div>
+		</div>
+		<div class="separate"><div class="item"></div></div>
+		<div class="tooltip" v-for="(dm, dmIndex) in domainList" :key="dm.domainId">
+			<div class="guild" @click="clickDomain(dm.domainId)">
+				<span class="pill"></span>
+				<img class="img" v-if="dm.avatar" :src="dm.avatar"></img>
+				<div class="img" v-else v-text="dm.name.substring(0,1)" :style="'background-color:' + colors[dmIndex % 5] + ';color:#ffffff;'"></div>
+				<div class="notice" :class="{'show':dm.noticeCount}" v-text="dm.noticeCount"></div>
+			</div>
+			<div class="tooltip-text black right" v-text="dm.name"></div>
+		</div>
+		<div class="tooltip">
+			<div class="guild oper add" @click="clickAddDomain">
+				<span class="pill"></span>
+				<div class="img"><i class="icon plus"></i></div>
+			</div>
+			<div class="tooltip-text black right" v-t="'common.addServer'"></div>
+		</div>
+		<div class="tooltip">
+			<div class="guild oper explore" @click="clickExploreDomain">
+				<span class="pill"></span>
+				<div class="img"><i class="icon compass"></i></div>
+			</div>
+			<div class="tooltip-text black right" v-t="'common.exploreServer'"></div>
+		</div>
+	</div>
+	<div class="main">
+		<div class="entry">
+			<div class="personal">
+				<div class="chats-holder">
+					<div class="chats">
+						<div class="chat-list">
+							<div class="chat-item" :class="{'active':activePanel=='friends'}" @click="clickPanel('friends')">
+								<div class="ico"><i class="icon user-friends"></i></div><div class="text" v-t="'home.friends'"></div>
+								<div class="notice" :class="{'show':userFriendNotice && userFriendNotice.count}" v-text="userFriendNotice ? userFriendNotice.count : ''"></div>
+							</div>
+							<div class="chat-item" :class="{'active':activePanel=='nitro'}" v-if="false" @click="clickPanel('nitro')">
+								<div class="ico"><i class="icon gem"></i></div><div class="text"></div>
+							</div>
+						</div>
+					</div>
+					<div class="chats">
+						<div class="title"><div class="text" v-t="'home.whisper'"></div><div class="oper" @click="clickAddWhisper"><i class="icon plus"></i></div></div>
+						<div class="chat-list">
+							<div class="chat-item whisper" v-for="wsp in whisperList" :key="wsp.whisperId" :class="{'active':activePanel=='whisper' && whisper.whisperId==wsp.whisperId}" @click="clickPanel('whisper', wsp.whisperId)">
+								<img class="img" :src="wsp.member ? (wsp.member.avatar || './assets/img/user_avatar.png') : './assets/img/chat_group_g.png'" />
+								<div class="name-members">
+									<div class="text name" v-text="wsp.member ? (wsp.user.userId==user.userId ? wsp.member.nickname : wsp.user.nickname) : wsp.name"></div>
+									<div class="text members" v-if="!wsp.member" v-text="wsp.memberCount + $t('home.members')"></div>
+								</div>
+								<div class="notice" :class="{'show':wsp.noticeCount}" v-text="wsp.noticeCount"></div>
+								<div class="oper" @click="clickAddWhisperUser(wsp.whisperId)"><i class="icon user-plus"></i></div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="head">
+					<div class="home-head"></div>
+				</div>
+			</div>
+			<div class="me">
+				<div class="info" @click="clickMe">
+					<div class="avatar">
+						<img class="img" :src="user && user.avatar ? user.avatar : './assets/img/user_avatar.png'"></img>
+						<img class="nft-icon" v-if="user && user.nftavatar.value==1" src="./assets/img/nft_icon.png" />
+						<span class="indicate" :class="{'online':user && user.aliveStatus.value==1,'idle':user && user.aliveStatus.value==2,'busy':user && user.aliveStatus.value==4,'hide':user && user.aliveStatus.value==8}"></span>
+					</div>
+					<div class="nickname" v-text="user ? user.nickname : ''"></div>
+				</div>
+				<div class="setting" @click="clickUserSetting"><i class="icon settings"></i></div>
+			</div>
+		</div>
+		<div class="chat friends" :class="{'active':activePanel=='friends'}">
+			<div class="top-bar">
+				<i class="icon users"></i><div class="title" v-t="'home.friends'"></div><div class="seprate"></div>
+				<div class="tabs">
+					<div class="tab" :class="{'active':friends.friendStatus==4 && friends.aliveStatus==1}"><div class="tab-content" @click="clickUserFriendStatus(4, 1)" v-t="'home.friendOnline'"></div></div>
+					<div class="tab" :class="{'active':friends.friendStatus==4 && friends.aliveStatus==0}"><div class="tab-content" @click="clickUserFriendStatus(4, 0)" v-t="'home.friendAll'"></div></div>
+					<div class="tab" :class="{'active':friends.friendStatus==1}"><div class="tab-content" @click="clickUserFriendStatus(1, 0)" v-t="'home.friendPending'"></div><div class="notice" :class="{'show':userFriendNotice && userFriendNotice.count}" v-text="userFriendNotice ? userFriendNotice.count : ''"></div></div>
+					<div class="tab" :class="{'active':friends.friendStatus==8}" v-if="false"><div class="tab-content" @click="clickUserFriendStatus(8, 0)" v-t="'home.friendBlocked'"></div></div>
+					<div class="tab add-friend"><div class="tab-content" @click="clickAddUserFriend" v-t="'home.addFriend'"></div></div>
+				</div>
+				<div class="opers" v-if="false">
+					<div class="tooltip add-group">
+						<div class="oper"><i class="icon comments"></i></div>
+						<div class="tooltip-text black bottom"></div>
+					</div>
+				</div>
+				<div class="seprate" v-if="false"></div>
+				<div class="hards" v-if="false">
+					<div class="tooltip imsg">
+						<div class="hard"><i class="icon imsg"></i></div>
+						<div class="tooltip-text black bottom"></div>
+					</div>
+					<div class="tooltip help">
+						<div class="hard"><i class="icon help"></i></div>
+						<div class="tooltip-text black bottom"></div>
+					</div>
+				</div>
+			</div>
+			<div class="bottom-bar">
+				<div class="friends-holder" v-if="!friends.addUserFriend && friends.friendStatus==4 && friends.aliveStatus==1">
+					<div class="friend-list">
+						<div class="search"><input class="text" type="text" :placeholder="$t('home.search')" v-model="friends.searchFriendOnlineText" /><div class="ico"><i class="icon search"></i></div></div>
+						<div class="head"><div class="text" v-text="$t('home.labelOnline') + statusUserFriendList.length"></div></div>
+						<div class="list">
+							<div class="friend-item" v-for="statusUserFriend in statusUserFriendList" :key="statusUserFriend.friend.userId">
+								<div class="sep-item" @click="clickUserInfo(statusUserFriend.friend.userId)">
+									<div class="avatar">
+										<img class="img" :src="statusUserFriend.friend.avatar || './assets/img/user_avatar.png'"><span class="indicate" :class="{'online':statusUserFriend.friend.aliveStatus.value==1}"></span>
+									</div>
+									<div class="name-status">
+										<div class="nickname" v-text="statusUserFriend.friend.nickname"></div>
+										<div class="alive-status" :class="{'online':statusUserFriend.friend.aliveStatus.value==1}" v-text="statusUserFriend.friend.aliveStatus.name"></div>
+									</div>
+									<div class="opers">
+										<div class="tooltip msg-friend">
+											<div class="oper" @click="clickSendUserFriendMessage(statusUserFriend.friend.userId)"><i class="icon comment-alt"></i></div>
+											<div class="tooltip-text black bottom" v-t="'home.operMessage'"></div>
+										</div>
+										<div class="tooltip del-friend">
+											<div class="oper" @click="clickRemoveUserFriend(statusUserFriend.friend.userId)"><i class="icon times"></i></div>
+											<div class="tooltip-text black bottom" v-t="'home.operRemove'"></div>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="friends-empty" v-if="statusUserFriendList.length==0" v-t="'home.noFriends'"></div>
+						</div>
+					</div>
+				</div>
+				<div class="friends-holder" v-if="!friends.addUserFriend && friends.friendStatus==4 && friends.aliveStatus==0">
+					<div class="friend-list">
+						<div class="search"><input class="text" type="text" :placeholder="$t('home.search')" v-model="friends.searchFriendAllText" /><div class="ico"><i class="icon search"></i></div></div>
+						<div class="head"><div class="text" v-text="$t('home.labelAll') + statusUserFriendList.length"></div></div>
+						<div class="list">
+							<div class="friend-item" v-for="statusUserFriend in statusUserFriendList" :key="statusUserFriend.friend.userId">
+								<div class="sep-item" @click="clickUserInfo(statusUserFriend.friend.userId)">
+									<div class="avatar">
+										<img class="img" :src="statusUserFriend.friend.avatar || './assets/img/user_avatar.png'"><span class="indicate" :class="{'online':statusUserFriend.friend.aliveStatus.value==1}"></span>
+									</div>
+									<div class="name-status">
+										<div class="nickname" v-text="statusUserFriend.friend.nickname"></div>
+										<div class="alive-status" :class="{'online':statusUserFriend.friend.aliveStatus.value==1}" v-text="statusUserFriend.friend.aliveStatus.name"></div>
+									</div>
+									<div class="opers">
+										<div class="tooltip msg-friend">
+											<div class="oper" @click="clickSendUserFriendMessage(statusUserFriend.friend.userId)"><i class="icon comment-alt"></i></div>
+											<div class="tooltip-text black bottom" v-t="'home.operMessage'"></div>
+										</div>
+										<div class="tooltip del-friend">
+											<div class="oper" @click="clickRemoveUserFriend(statusUserFriend.friend.userId)"><i class="icon times"></i></div>
+											<div class="tooltip-text black bottom" v-t="'home.operRemove'"></div>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="friends-empty" v-if="statusUserFriendList.length==0" v-t="'home.noFriends'"></div>
+						</div>
+					</div>
+				</div>
+				<div class="friends-holder" v-if="!friends.addUserFriend && friends.friendStatus==1">
+					<div class="friend-list">
+						<div class="search"><input class="text" type="text" :placeholder="$t('home.search')" v-model="friends.searchFriendInvitingText" /><div class="ico"><i class="icon search"></i></div></div>
+						<div class="head"><div class="text" v-text="$t('home.labelPending') + statusUserFriendList.length"></div></div>
+						<div class="list">
+							<div class="friend-item" v-for="statusUserFriend in statusUserFriendList" :key="statusUserFriend.friend.userId">
+								<div class="sep-item" @click="clickUserInfo(statusUserFriend.friend.userId)">
+									<div class="avatar">
+										<img class="img" :src="statusUserFriend.friend.avatar || './assets/img/user_avatar.png'"><span class="indicate" :class="{'online':statusUserFriend.friend.aliveStatus.value==1}"></span>
+									</div>
+									<div class="name-status">
+										<div class="nickname" v-text="statusUserFriend.friend.nickname"></div>
+										<div class="invite-status" v-text="statusUserFriend.friendStatus.value==1 ? $t('home.outgoingRequest') : (statusUserFriend.friendStatus.value==2 ? $t('home.incomingRequest') : '')"></div>
+									</div>
+									<div class="opers">
+										<div class="tooltip del-friend" v-if="statusUserFriend.friendStatus.value==1">
+											<div class="oper" @click="clickCancelUserFriend(statusUserFriend.friend.userId)"><i class="icon times"></i></div>
+											<div class="tooltip-text black bottom" v-t="'home.operCancel'"></div>
+										</div>
+										<div class="tooltip msg-friend" v-if="statusUserFriend.friendStatus.value==2">
+											<div class="oper" @click="clickAcceptUserFriend(statusUserFriend.friend.userId)"><i class="icon check"></i></div>
+											<div class="tooltip-text black bottom" v-t="'home.operAccept'"></div>
+										</div>
+										<div class="tooltip del-friend" v-if="statusUserFriend.friendStatus.value==2">
+											<div class="oper" @click="clickRejectUserFriend(statusUserFriend.friend.userId)"><i class="icon times"></i></div>
+											<div class="tooltip-text black bottom" v-t="'home.operIgnore'"></div>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="friends-empty" v-if="statusUserFriendList.length==0" v-t="'home.noFriends'"></div>
+						</div>
+					</div>
+				</div>
+				<div class="friends-holder" v-if="!friends.addUserFriend && friends.friendStatus==8">
+					<div class="friend-list">
+						<div class="search"><input class="text" type="text" :placeholder="$t('home.search')" v-model="friends.searchFriendRemoveText" /><div class="ico"><i class="icon search"></i></div></div>
+						<div class="head"><div class="text" v-text="$t('home.labelBlocked') + statusUserFriendList.length"></div></div>
+						<div class="list">
+							<div class="friend-item" v-for="statusUserFriend in statusUserFriendList" :key="statusUserFriend.friend.userId">
+								<div class="sep-item" @click="clickUserInfo(statusUserFriend.friend.userId)">
+									<div class="avatar">
+										<img class="img" :src="statusUserFriend.friend.avatar || './assets/img/user_avatar.png'"><span class="indicate" :class="{'online':statusUserFriend.friend.aliveStatus.value==1}"></span>
+									</div>
+									<div class="name-status">
+										<div class="nickname" v-text="statusUserFriend.friend.nickname"></div>
+										<div class="invite-status" v-t="'home.friendBlocked'"></div>
+									</div>
+									<div class="opers">
+										<div class="tooltip del-friend">
+											<div class="oper"><i class="icon times"></i></div>
+											<div class="tooltip-text black bottom" v-t="'home.operCancel'"></div>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="friends-empty" v-if="statusUserFriendList.length==0" v-t="'home.noFriends'"></div>
+						</div>
+					</div>
+				</div>
+				<div class="add-user-friend" v-if="friends.addUserFriend">
+					<div class="title" v-text="$t('home.addFriend')"></div>
+					<div class="search"><input class="text" type="text" :placeholder="$t('home.searchByNicknameOrAddress')" v-model="friends.searchUserText" @keypress="keypressAddUserFriendSearch" /></div>
+					<div class="empty" v-if="friends.userList.length==0" v-t="'home.noPeople'"></div>
+					<div class="search-user-list">
+						<div class="user-item" v-for="usr in friends.userList" :key="usr.userId" v-if="usr.userId!=user.userId">
+							<div class="sep-item">
+								<div class="avatar" @click="clickUserInfo(usr.userId)">
+									<img class="img" :src="usr.avatar || './assets/img/user_avatar.png'"><span class="indicate" :class="{'online':usr.aliveStatus.value==1,'hide':usr.aliveStatus.value==8 || usr.aliveStatus.value==16}"></span>
+								</div>
+								<div class="name-status" @click="clickUserInfo(usr.userId)">
+									<div class="nickname" v-text="usr.nickname"></div>
+									<div class="alive-status" :class="{'online':usr.aliveStatus.value==1,'hide':usr.aliveStatus.value==8 || usr.aliveStatus.value==16}" v-text="usr.aliveStatus.name"></div>
+								</div>
+								<div class="opers">
+									<button class="primary-button oper" v-if="!usr.isFriend" @click="clickAddUserFriendInvite(usr.userId)" v-text="$t('home.sendInviteRequest')"></button>
+									<button class="primary-button oper" v-else @click="clickAddUserFriendSendMessage(usr.userId)" v-text="$t('home.sendMessage')"></button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="did-holder">
+					<div class="did">
+						<div class="title"><div class="text" v-text="$t('home.myRootID') + ': ' + (user ? user.code : '')"></div></div>
+						<div class="address txt">
+							<div class="text" v-text="user ? user.deAddress.substring(0,8) + '...' + user.deAddress.substring(user.deAddress.length-16,user.deAddress.length) : ''"></div>
+							<div class="full" id="myadd"><input :value="user ? user.deAddress : ''" /></div>
+							<div class="oper" @click="clickCopyMyAddress"><i class="icon copy"></i></div>
+						</div>
+						<div class="following txt" v-if="false">Following: 0</div>
+						<div class="follower txt" v-if="false">Follower: 0</div>
+						<div class="tvf txt" v-text="'$' + (user ? formatAmount(user.deAmount / 100) : '0.00')"></div>
+						<div class="assets-label txt" v-t="'home.pa'"></div>
+						<div class="assets chain-values">
+							<div class="chain-value-holder" v-for="chainBalance in userChainBalances" :key="chainBalance.id">
+								<div class="chain-logo"><img class="img" :src="chainBalance.logo" /></div>
+								<div class="name-value">
+									<div class="chain-name" v-text="chainBalance.name"></div>
+									<div class="chain-value" v-text="'$ ' + formatAmount(chainBalance.amount)"></div>
+								</div>
+							</div>
+							<div class="empty" v-if="userChainBalances.length==0" v-t="'userInfo.noAssets'"></div>
+						</div>
+						<div class="nfts-label txt">NFT</div>
+						<div class="nft-holders">
+							<div class="nft-holder" v-for="userNft in userNftList" :key="userNft.userNftId">
+								<a class="nft-link" :href="userNft.sourceUrl ? userNft.sourceUrl : 'javascript:void(0)'" :target="userNft.sourceUrl ? '_' : ''">
+									<div class="nft-image">
+										<img class="nft-img" v-if="userNft.nftType.value==1" :src="userNft.contentUrl" />
+										<video class="nft-img" v-if="userNft.nftType.value==4" :src="userNft.contentUrl"></video>
+										<img class="chain-img" :src="userNft.chain.logo" />
+									</div>
+									<div class="nft-name" v-text="userNft.name"></div>
+									<div class="nft-price" v-text="'$ ' + formatAmount(userNft.price)"></div>
+								</a>
+							</div>
+							<div class="empty" v-if="userNftList.length==0" v-t="'userInfo.noNfts'"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="chat nitro" :class="{'active':activePanel=='nitro'}">
+			<div class="top-bar">
+				<i class="icon gem"></i><div class="title"></div>
+			</div>
+			<div class="bottom-bar">
+				<div class="nitro-holder">
+					<div class="banner">
+						<div class="head"></div>
+						<div class="custom"></div>
+						<div class="upgrade"></div>
+						<div class="pay">
+							<button class="pay-button subscribe"><i class="icon gem"></i></button>
+							<button class="pay-button handsel"><i class="icon gift"></i></button>
+						</div>
+					</div>
+					<div class="title"></div>
+					<div class="features">
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#e292aa"></div>
+								<div class="text"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature01.png" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#fb5fdc"></div>
+								<div class="text"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature02.svg" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#00e0a7"></div>
+								<div class="text"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature03.png" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#5c87ff"></div>
+								<div class="text"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature04.svg" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#ffa600"></div>
+								<div class="text"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature05.svg" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#5c87ff"></div>
+								<div class="text"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature06.svg" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#ffafff"></div>
+								<div class="text"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature07.png" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#776bff"></div>
+								<div class="text"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature08.png" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#fa4e89"></div>
+								<div class="text"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature09.png" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#ffd836"></div>
+								<div class="text"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature10.svg" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#a57ef8"></div>
+								<div class="text"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature11.png" /></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="chat whisper" :class="{'active':activePanel=='whisper'}">
+			<div class="top-bar">
+				<i class="icon crop-alt"></i><div class="title" v-text="whisper.name || (whisper.member ? whisper.member.nickname : '')"></div>
+				<div class="tabs"></div>
+				<div class="opers" v-if="false">
+					<div class="tooltip thumbtack">
+						<div class="oper"><i class="icon thumbtack"></i></div>
+						<div class="tooltip-text black bottom"></div>
+					</div>
+					<div class="tooltip user-plus">
+						<div class="oper"><i class="icon user-plus"></i></div>
+						<div class="tooltip-text black bottom"></div>
+					</div>
+					<div class="tooltip user-friends">
+						<div class="oper"><i class="icon user-friends"></i></div>
+						<div class="tooltip-text black bottom"></div>
+					</div>
+				</div>
+				<div class="search" v-if="false"><input class="text" type="text" placeholder="Search" /><div class="ico"><i class="icon search"></i></div></div>
+				<div class="seprate" v-if="false"></div>
+				<div class="hards" v-if="false">
+					<div class="tooltip imsg">
+						<div class="hard"><i class="icon imsg"></i></div>
+						<div class="tooltip-text black bottom"></div>
+					</div>
+					<div class="tooltip help">
+						<div class="hard"><i class="icon help"></i></div>
+						<div class="tooltip-text black bottom"></div>
+					</div>
+				</div>
+			</div>
+			<div class="bottom-bar">
+				<div id="msg" class="msg">
+					<div id="list" class="list" @scroll="scrollMsgList">
+						<div class="item tip"><div class="start"><i class="icon crop-alt"></i></div></div>
+						<div class="item tip"><div class="memo" v-text="whisper.member ? 'This is the start with ' + (whisper.user.userId==user.userId ? whisper.member.nickname : whisper.user.nickname) + '.' : 'This is the start of the ' + whisper.name + '.'"></div></div>
+						<div class="item" v-for="msg in whisper.messageList" :key="msg.messageId">
+							<div class="msg-item">
+								<div class="title"><div class="nickname" v-text="msg.user.nickname" @click="clickUserInfo(msg.user.userId)"></div><div class="datetime" v-text="$d(new Date(msg.messageTime.value * 1000), 'long')"></div></div>
+								<div class="msg-text" v-if="msg.messageType.value==1" v-html="formatMessage(msg.textContent)"></div><!-- text -->
+								<div class="msg-image" v-if="msg.messageType.value==2"><!-- image -->
+									<img class="img" :src="msg.fileUrl" @click="clickViewImage(msg.fileUrl)" />
+								</div>
+								<div class="msg-audio" v-if="msg.messageType.value==4"><!-- audio -->
+									<audio class="audio" :src="msg.fileUrl" controls="controls"></audio>
+								</div>
+								<div class="msg-video" v-if="msg.messageType.value==6"><!-- video -->
+									<video class="video" :src="msg.fileUrl" controls="controls"></video>
+								</div>
+								<div class="msg-file" v-if="msg.messageType.value==8"><!-- file -->
+									<div class="file">
+										<div class="ico"><img class="img" src="./assets/img/file.svg" /></div>
+										<div class="filename" v-text="msg.fileList[0].filename"></div>
+										<div class="filesize" v-text="msg.fileList[0].filesize"></div>
+										<div class="dl"><a :href="msg.fileUrl" :download="msg.fileList[0].filename" target="_"><i class="icon download"></i></a></div>
+									</div>
+								</div>
+								<div class="msg-domain-invite" v-if="msg.messageType.value==22"><!-- invite -->
+									<div class="domain-banner" v-if="msg.inviteDomain.banner"><img class="img" :src="msg.inviteDomain.banner" /></div>
+									<div class="invite-desc" v-text="(user && msg.user.userId==user.userId ? $t('server.msgList.you') : msg.user.nickname) + $t('server.msgList.domainInvite')"></div>
+									<div class="invite-domain">
+										<div class="domain-name" v-text="msg.inviteDomain.name"></div>
+										<div class="domain-status">
+											<div class="online-status status"><div class="dot"></div><div class="status-value" v-text="msg.inviteDomain.onlineCount + $t('server.msgList.onlines')"></div></div>
+											<div class="member-status status"><div class="dot"></div><div class="status-value" v-text="msg.inviteDomain.memberCount + $t('server.msgList.members')"></div></div>
+										</div>
+										<div class="domain-avatar">
+											<img class="img" v-if="msg.inviteDomain.avatar" :src="msg.inviteDomain.avatar" />
+											<div class="img" v-else v-text="msg.inviteDomain.name.substring(0,1)"></div>
+										</div>
+										<div class="invite-join">
+											<button class="button positive-button" @click="clickMsgJoinDomain(msg.inviteDomain.domainId)" v-t="'server.msgList.join'"></button>
+										</div>
+									</div>
+								</div>
+								<div class="avatar" :style="msg.user.avatar ? 'background-image:url(' + msg.user.avatar + ')' : ''" @click="clickUserInfo(msg.user.userId)"></div>
+								<div class="reactions">
+									<div class="reaction" v-for="reaction in msg.reactionList" :key="reaction.reactionId" @click="clickMsgReact(msg.messageId,reaction.reaction)">
+										<div class="emoji" v-text="reaction.reaction"></div><div class="re-count" v-text="reaction.count"></div>
+									</div>
+								</div>
+								<div class="replied" v-if="msg.replyMessage">
+									<div class="msg-item">
+										<div class="title" @click="clickUserInfo(msg.replyMessage.user.userId)"><div class="nickname" v-text="msg.replyMessage.user.nickname"></div><div class="datetime" v-text="$d(new Date(msg.replyMessage.messageTime.value * 1000), 'long')"></div></div>
+										<div class="msg-text" v-if="msg.replyMessage.messageType.value==1" v-text="msg.replyMessage.textContent"></div>
+										<div class="msg-image" v-if="msg.replyMessage.messageType.value==2">
+											<img class="img" :src="msg.replyMessage.fileUrl" @click="clickViewImage(msg.replyMessage.fileUrl)" />
+										</div>
+										<div class="msg-audio" v-if="msg.replyMessage.messageType.value==4">
+											<audio class="audio" :src="msg.replyMessage.fileUrl" controls="controls"></audio>
+										</div>
+										<div class="msg-video" v-if="msg.replyMessage.messageType.value==6">
+											<video class="video" :src="msg.replyMessage.fileUrl" controls="controls"></video>
+										</div>
+										<div class="msg-file" v-if="msg.replyMessage.messageType.value==8">
+											<div class="file">
+												<div class="ico"><img class="img" src="./assets/img/file.svg" /></div>
+												<div class="filename" v-text="msg.replyMessage.fileList[0].filename"></div>
+												<div class="filesize" v-text="msg.replyMessage.fileList[0].filesize"></div>
+												<div class="dl"><a :href="msg.replyMessage.fileUrl" :download="msg.replyMessage.fileList[0].filename" target="_"><i class="icon download"></i></a></div>
+											</div>
+										</div>
+										<div class="msg-domain-invite" v-if="msg.replyMessage.messageType.value==22">
+											<div class="domain-banner" v-if="msg.replyMessage.inviteDomain.banner"><img class="img" :src="msg.replyMessage.inviteDomain.banner" /></div>
+											<div class="invite-desc" v-text="(user && msg.replyMessage.user.userId==user.userId ? $t('server.msgList.you') : msg.replyMessage.user.nickname) + $t('server.msgList.domainInvite')"></div>
+											<div class="invite-domain">
+												<div class="domain-name" v-text="msg.replyMessage.inviteDomain.name"></div>
+												<div class="domain-status">
+													<div class="online-status status"><div class="dot"></div><div class="status-value" v-text="msg.replyMessage.inviteDomain.onlineCount + $t('server.msgList.onlines')"></div></div>
+													<div class="member-status status"><div class="dot"></div><div class="status-value" v-text="msg.replyMessage.inviteDomain.memberCount + $t('server.msgList.members')"></div></div>
+												</div>
+												<div class="domain-avatar">
+													<img class="img" v-if="msg.replyMessage.inviteDomain.avatar" :src="msg.replyMessage.inviteDomain.avatar" />
+													<div class="img" v-else v-text="msg.replyMessage.inviteDomain.name.substring(0,1)"></div>
+												</div>
+												<div class="invite-join">
+													<button class="button positive-button" @click="clickMsgJoinDomain(msg.replyMessage.inviteDomain.domainId)" v-t="'server.msgList.join'"></button>
+												</div>
+											</div>
+										</div>
+										<div class="avatar" :style="msg.replyMessage.user.avatar ? 'background-image:url(' + msg.replyMessage.user.avatar + ')' : ''" @click="clickUserInfo(msg.replyMessage.user.userId)"></div>
+									</div>
+								</div>
+								<div class="opers">
+									<div class="tooltip">
+										<div class="oper" @click="clickMessageOperReact(msg.messageId)">
+											<i class="icon smile"></i>
+										</div>
+										<div class="tooltip-text black top" v-t="'common.msgOperReact'"></div>
+									</div>
+									<div class="tooltip">
+										<div class="oper" @click="clickMessageOperReply(msg.messageId)">
+											<i class="icon reply"></i>
+										</div>
+										<div class="tooltip-text black top" v-t="'common.msgOperReply'"></div>
+									</div>
+									<div class="tooltip" v-if="user && user.userId==msg.userId">
+										<div class="oper" @click="clickMessageOperEdit(msg.messageId)">
+											<i class="icon pen"></i>
+										</div>
+										<div class="tooltip-text black top" v-t="'common.msgOperEdit'"></div>
+									</div>
+									<div class="tooltip" v-if="user && user.userId==msg.userId">
+										<div class="oper" @click="clickMessageOperRevoke(msg.messageId)">
+											<i class="icon undo"></i>
+										</div>
+										<div class="tooltip-text black top" v-t="'common.msgOperRevoke'"></div>
+									</div>
+								</div>
+							</div>
+							<div class="msg-reply" v-if="whisper.replyMessage && whisper.replyMessage.messageId==msg.messageId"></div>
+							<div class="msg-edit" v-if="whisper.editMessage && whisper.editMessage.messageId==msg.messageId"></div>
+						</div>
+					</div>
+					<div class="send">
+						<div class="reply-holder" v-if="whisper.replyMessage">
+							<div class="text"><span class="at" v-t="'common.replyTo'"></span><span class="mb" v-text="whisper.replyMessage ? whisper.replyMessage.user.nickname : ''"></span><span class="txt" v-text="whisper.replyMessage ? whisper.replyMessage.textContent : ''"></span></div><div class="del" @click="clickMessageOperReplyCancel"><i class="icon times-circle"></i></div>
+						</div>
+						<div class="edit-holder" v-if="whisper.editMessage">
+							<div class="text"><span class="at" v-t="'common.editTo'"></span><span class="mb" v-text="whisper.editMessage ? whisper.editMessage.user.nickname : ''"></span><span class="txt" v-text="whisper.editMessage ? whisper.editMessage.textContent : ''"></span></div><div class="del" @click="clickMessageOperEditCancel"><i class="icon times-circle"></i></div>
+						</div>
+						<!--
+						<div class="file-holder" v-if="false">
+							<div class="file-view">
+								<img class="file" src="./assets/img/boost_show.png" />
+								<div class="filename"></div>
+								<div class="del"><i class="icon trash-alt"></i></div>
+							</div>
+							<div class="file-view">
+								<video class="file" src="./assets/img/c.mp4"></video>
+								<div class="filename"></div>
+								<div class="del"><i class="icon trash-alt"></i></div>
+							</div>
+						</div>
+						-->
+						<div class="inputs-holder">
+							<div class="option"><i class="icon plus-circle"><input class="file" type="file" @change="changeSendFile" /></i></div>
+							<div class="textbox" contenteditable="true" @keydown="keydownMessage" @keyup="keyupMessage"></div>
+							<div class="exts">
+								<div class="ext"><i class="icon smile" @click="clickChatEmoji"></i></div>
+							</div>
+						</div>
+						<div class="emoji-panel" :class="{'show':whisper.showChatEmoji}" @click="clickShowFrame('showChatEmoji')">
+							<button class="emoji" @click="clickChatEmojiItem('😀')"><div class="img">😀</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😃')"><div class="img">😃</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😄')"><div class="img">😄</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😁')"><div class="img">😁</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😆')"><div class="img">😆</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😅')"><div class="img">😅</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🤣')"><div class="img">🤣</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😂')"><div class="img">😂</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🙂')"><div class="img">🙂</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🙃')"><div class="img">🙃</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😉')"><div class="img">😉</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😊')"><div class="img">😊</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😇')"><div class="img">😇</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🥰')"><div class="img">🥰</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😍')"><div class="img">😍</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🤩')"><div class="img">🤩</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😘')"><div class="img">😘</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😗')"><div class="img">😗</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😚')"><div class="img">😚</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😙')"><div class="img">😙</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😋')"><div class="img">😋</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😛')"><div class="img">😛</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😜')"><div class="img">😜</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🤪')"><div class="img">🤪</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😝')"><div class="img">😝</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🤑')"><div class="img">🤑</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🤗')"><div class="img">🤗</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🤭')"><div class="img">🤭</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🤫')"><div class="img">🤫</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🤔')"><div class="img">🤔</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🤐')"><div class="img">🤐</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🤨')"><div class="img">🤨</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😶')"><div class="img">😶</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😑')"><div class="img">😑</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😏')"><div class="img">😏</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😒')"><div class="img">😒</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🙄')"><div class="img">🙄</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😬')"><div class="img">😬</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🤥')"><div class="img">🤥</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😌')"><div class="img">😌</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😪')"><div class="img">😪</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🤤')"><div class="img">🤤</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😴')"><div class="img">😴</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😷')"><div class="img">😷</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🤒')"><div class="img">🤒</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🤕')"><div class="img">🤕</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🤢')"><div class="img">🤢</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🤮')"><div class="img">🤮</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🤧')"><div class="img">🤧</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🥵')"><div class="img">🥵</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🥶')"><div class="img">🥶</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🥴')"><div class="img">🥴</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('😵')"><div class="img">😵</div></button>
+							<button class="emoji" @click="clickChatEmojiItem('🤠')"><div class="img">🤠</div></button>
+						</div>
+					</div>
+				</div>
+				<div class="did-holder" v-if="whisper.member">
+					<div class="did">
+						<div class="title"><div class="text" v-text="$t('home.friendRootID') + ': ' + whisper.member.code"></div></div>
+						<div class="address txt">
+							<div class="text" v-text="whisper.member ? whisper.member.deAddress.substring(0,8) + '...' + whisper.member.deAddress.substring(whisper.member.deAddress.length-16,whisper.member.deAddress.length) : ''"></div>
+							<div class="full" id="fradd"><input :value="whisper.member ? whisper.member.deAddress : ''" /></div>
+							<div class="oper" @click="clickCopyFriendAddress"><i class="icon copy"></i></div>
+						</div>
+						<div class="following txt" v-if="false">Following: 0</div>
+						<div class="follower txt" v-if="false">Follower: 0</div>
+						<div class="tvf txt" v-text="'$' + (whisper.member ? (whisper.member.deAmount / 100).toFixed(2) : '0.00')"></div>
+						<div class="assets-label txt" v-t="'home.pa'"></div>
+						<div class="assets chain-values">
+							<div class="chain-value-holder" v-for="chainBalance in chainBalances" :key="chainBalance.id">
+								<div class="chain-logo"><img class="img" :src="chainBalance.logo" /></div>
+								<div class="name-value">
+									<div class="chain-name" v-text="chainBalance.name"></div>
+									<div class="chain-value" v-text="'$ ' + chainBalance.amount.toFixed(2)"></div>
+								</div>
+							</div>
+							<div class="empty txt" v-if="chainBalances.length==0" v-t="'userInfo.noAssets'"></div>
+						</div>
+						<div class="nfts-label txt">NFT</div>
+						<div class="nft-holders">
+							<div class="nft-holder" v-for="userNft in userInfo.userNftList" :key="userNft.userNftId">
+								<a class="nft-link" :href="userNft.sourceUrl ? userNft.sourceUrl : 'javascript:void(0)'" :target="userNft.sourceUrl ? '_' : ''">
+									<div class="nft-image">
+										<img class="nft-img" v-if="userNft.nftType.value==1" :src="userNft.contentUrl" />
+										<video class="nft-img" v-if="userNft.nftType.value==4" :src="userNft.contentUrl"></video>
+										<img class="chain-img" :src="userNft.chain.logo" />
+									</div>
+									<div class="nft-name" v-text="userNft.name"></div>
+									<div class="nft-price" v-text="'$ ' + userNft.price.toFixed(2)"></div>
+								</a>
+							</div>
+							<div class="empty txt" v-if="userInfo.userNftList.length==0" v-t="'userInfo.noNfts'"></div>
+						</div>
+					</div>
+				</div>
+				<div class="member-holder" v-else>
+					<div class="group">
+						<div class="title" v-text="'Members - ' + whisper.memberList.length"></div>
+						<div class="list">
+							<div class="member" v-for="mbr in whisper.memberList" :key="mbr.userId" @click="clickUserInfo(mbr.userId)">
+								<div class="info">
+									<div class="avatar">
+										<img class="img" :src="mbr.avatar ? mbr.avatar : './assets/img/user_avatar.png'"></img>
+										<span class="indicate" :class="{'online':mbr.aliveStatus.value==1,'hide':mbr.aliveStatus.value==8 || mbr.aliveStatus.value==16}"></span>
+									</div>
+									<div class="nickname" style="color:rgb(241, 196, 15)" v-text="mbr.nickname"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<!-- modal.1 -->
+	<div class="modal mdl-user-setting" :class="{open:userSetting}" @click="clickShowFrame('userSetting')">
+		<div class="side">
+			<div class="menu-holder">
+				<div class="group">
+					<div class="title"><div class="text" v-t="'userSetting.userSettings.title'"></div></div>
+					<div class="menus">
+						<div class="menu" :class="{'active':userSettingItem=='account'}" @click="clickUserSettingItem('account')"><div class="text" v-t="'userSetting.userSettings.myAccount'"></div></div>
+						<div class="menu" :class="{'active':userSettingItem=='profile'}" @click="clickUserSettingItem('profile')"><div class="text" v-t="'userSetting.userSettings.userProfile'"></div></div>
+						<div class="menu" :class="{'active':userSettingItem=='safety'}" v-if="false" @click="clickUserSettingItem('safety')"><div class="text" v-t="'userSetting.userSettings.privacySafety'"></div></div>
+						<div class="menu" :class="{'active':userSettingItem=='oauth'}" v-if="false" @click="clickUserSettingItem('oauth')"><div class="text"></div></div>
+						<div class="menu" :class="{'active':userSettingItem=='connection'}" v-if="false" @click="clickUserSettingItem('connection')"><div class="text"></div></div>
+					</div>
+				</div>
+				<div class="separate" v-if="false"></div>
+				<div class="group" v-if="false">
+					<div class="title"><div class="text" v-t="'userSetting.billingSettings.title'"></div></div>
+					<div class="menus">
+						<div class="menu" :class="{'active':userSettingItem=='nitro'}" @click="clickUserSettingItem('nitro')"><div class="text" v-t="'userSetting.billingSettings.nitro'"></div></div>
+						<div class="menu" :class="{'active':userSettingItem=='boost'}" @click="clickUserSettingItem('boost')"><div class="text" v-t="'userSetting.billingSettings.domainBoost'"></div></div>
+						<div class="menu" :class="{'active':userSettingItem=='subscription'}" @click="clickUserSettingItem('subscription')"><div class="text" v-t="'userSetting.billingSettings.subscriptions'"></div></div>
+						<div class="menu" :class="{'active':userSettingItem=='gift'}" @click="clickUserSettingItem('gift')"><div class="text" v-t="'userSetting.billingSettings.giftInventory'"></div></div>
+						<div class="menu" :class="{'active':userSettingItem=='bill'}" @click="clickUserSettingItem('bill')"><div class="text" v-t="'userSetting.billingSettings.billing'"></div></div>
+					</div>
+				</div>
+				<div class="separate"></div>
+				<div class="group">
+					<div class="title"><div class="text" v-t="'userSetting.appSettings.title'"></div></div>
+					<div class="menus">
+						<div class="menu" :class="{'active':userSettingItem=='appearance'}" v-if="false" @click="clickUserSettingItem('appearance')"><div class="text" v-t="'userSetting.appSettings.appearance'"></div></div>
+						<div class="menu" :class="{'active':userSettingItem=='accessibility'}" v-if="false" @click="clickUserSettingItem('accessibility')"><div class="text"></div></div>
+						<div class="menu" :class="{'active':userSettingItem=='audiovideo'}" v-if="false" @click="clickUserSettingItem('audiovideo')"><div class="text"></div></div>
+						<div class="menu" :class="{'active':userSettingItem=='textimage'}" v-if="false" @click="clickUserSettingItem('textimage')"><div class="text" v-t="'userSetting.appSettings.textImage'"></div></div>
+						<div class="menu" :class="{'active':userSettingItem=='notification'}" v-if="false" @click="clickUserSettingItem('notification')"><div class="text" v-t="'userSetting.appSettings.notifications'"></div></div>
+						<div class="menu" :class="{'active':userSettingItem=='keybind'}" v-if="false" @click="clickUserSettingItem('keybind')"><div class="text"></div></div>
+						<div class="menu" :class="{'active':userSettingItem=='language'}" @click="clickUserSettingItem('language')"><div class="text" v-t="'userSetting.appSettings.language'"></div></div>
+						<div class="menu" :class="{'active':userSettingItem=='streamer'}" v-if="false" @click="clickUserSettingItem('streamer')"><div class="text" v-t="'userSetting.appSettings.streamerMode'"></div></div>
+						<div class="menu" :class="{'active':userSettingItem=='advanced'}" v-if="false" @click="clickUserSettingItem('advanced')"><div class="text"></div></div>
+					</div>
+				</div>
+				<div class="separate" v-if="false"></div>
+				<div class="group" v-if="false">
+					<div class="title"><div class="text" v-t="'userSetting.activitySettings.title'"></div></div>
+					<div class="menus">
+						<div class="menu" :class="{'active':userSettingItem=='activity'}" @click="clickUserSettingItem('activity')"><div class="text" v-t="'userSetting.activitySettings.activityStatus'">活动状态</div></div>
+					</div>
+				</div>
+				<div class="separate" v-if="false"></div>
+				<div class="group" v-if="false">
+					<div class="menus">
+						<div class="menu" :class="{'active':userSettingItem=='newly'}" @click="clickUserSettingItem('newly')"><div class="text"></div></div>
+					</div>
+				</div>
+				<div class="separate"></div>
+				<div class="group">
+					<div class="menus">
+						<div class="menu" @click="clickUserSettingItem('logout')"><div class="text" v-t="'userSetting.logOut'"></div></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="body">
+			<div class="body-item account" :class="{'active': userSettingItem=='account'}">
+				<div class="seg">
+					<div class="title" v-t="'userSetting.userSettings.myAccount'"></div>
+					<div class="info">
+						<div class="banner" :style="(user && user.color ? 'background-color:' + user.color + ';' : '') + (user && user.banner ? 'background-image:url(' + user.banner + ');height:200px;' : '')"></div>
+						<div class="head">
+							<div class="avatar">
+								<img class="img" :src="user && user.avatar ? user.avatar : './assets/img/user_avatar.png'"></img>
+								<img class="nft-icon" style="top:4px;left:4px;width:24px;height:24px;" v-if="user && user.nftavatar.value==1" src="./assets/img/nft_icon.png" />
+								<span class="indicate" :class="{'online':user && user.aliveStatus.value==1,'idle':user && user.aliveStatus.value==2,'busy':user && user.aliveStatus.value==4,'hide':user && user.aliveStatus.value==8}"></span>
+							</div>
+							<div class="nickname" v-text="user ? user.nickname : ''"></div>
+							<div class="edit"><button class="primary-button edit-button" v-t="'userSetting.userSettings.editUserProfile'" @click="clickEditUserProfile"></button></div>
+						</div>
+						<div class="body">
+							<div class="edit-item">
+								<div class="display">
+									<div class="label" v-t="'userSetting.userSettings.nickname'"></div>
+									<div class="value" v-text="user ? user.nickname : ''"></div>
+								</div>
+								<div class="oper"><button class="oper-button edit-button" v-t="'userSetting.userSettings.edit'" @click="clickEditUserNickname"></button></div>
+							</div>
+							<div class="edit-item">
+								<div class="display">
+									<div class="label" v-t="'userSetting.userSettings.email'"></div>
+									<div class="value" v-text="user && user.email ? user.email : '-'"></div>
+								</div>
+								<div class="oper"><button class="oper-button edit-button" v-t="'userSetting.userSettings.edit'" @click="clickEditUserEmail"></button></div>
+							</div>
+							<div class="edit-item">
+								<div class="display">
+									<div class="label" v-t="'userSetting.userSettings.accountAddress'"></div>
+									<div class="value" v-text="user ? user.deAddress : ''"></div>
+								</div>
+								<div class="oper"><button class="oper-button remove-button" v-if="false"></button></div>
+								<div class="oper"><button class="oper-button edit-button" v-if="false"></button></div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="sep" v-if="false"></div>
+				<div class="seg" v-if="false">
+					<div class="title" v-t="'userSetting.userSettings.authentication'"></div>
+					<div class="memo" v-t="'userSetting.userSettings.tfTitle'"></div>
+					<div class="desc" v-t="'userSetting.userSettings.tfDesc'"></div>
+					<div class="opers"><button class="oper-button primary-button enable-security-button" v-t="'userSetting.userSettings.tfEnable'"></button></div>
+				</div>
+				<div class="sep"></div>
+				<div class="seg">
+					<div class="memo" v-t="'userSetting.userSettings.removal'"></div>
+					<div class="desc" v-t="'userSetting.userSettings.removalDesc'"></div>
+					<div class="opers"><button class="oper-button warning-button disable-button" v-t="'userSetting.userSettings.disableAccount'"></button><button class="oper-button warning-alt-button delete-button" v-t="'userSetting.userSettings.deleteAccount'"></button></div>
+				</div>
+			</div>
+			<div class="body-item profile" :class="{'active': userSettingItem=='profile'}">
+				<div class="seg">
+					<div class="title" v-t="'userSetting.userSettings.userProfile'"></div>
+					<div class="sep"></div>
+					<div class="info">
+						<div class="left">
+							<div class="memo" v-t="'userSetting.userSettings.avatar'"></div>
+							<div class="opers"><button class="oper-button primary-button avatar-button" v-t="'userSetting.userSettings.changeAvatar'" @click="clickChangeUserAvatar"></button></div>
+							<div class="sep"></div>
+							<div class="memo" v-t="'userSetting.userSettings.profileColor'"></div>
+							<div class="colors">
+								<div class="color clr-default">
+									<div class="clr-panel" @click="clickChangeUserColorDefault"></div>
+									<div class="clr-name" v-t="'userSetting.userSettings.defaultColor'"></div>
+								</div>
+								<div class="color clr-custom">
+									<div class="clr-panel" :style="userSettingAttrs.userColorEdit ? 'background-color:' + userSettingAttrs.userColorEdit : ''"><el-color-picker :value="userSettingAttrs.userColor" @active-change="clickChangeUserColor"></el-color-picker></div>
+									<div class="clr-name" v-t="'userSetting.userSettings.customColor'"></div>
+								</div>
+							</div>
+							<div class="memo" v-t="'userSetting.userSettings.profileBanner'"></div>
+							<div class="desc" v-t="'userSetting.userSettings.bannerDesc'"></div>
+							<div class="opers">
+								<button class="oper-button positive-button nitro-button"><span v-t="'userSetting.userSettings.uploadBanner'"></span><input class="file" type="file" @change="changeChangeUserBanner" /></button>
+							</div>
+							<div class="sep"></div>
+							<div class="memo" v-t="'userSetting.userSettings.aboutMe'"></div>
+							<div class="about"><textarea class="text" v-model="userSettingAttrs.aboutEdit" @input="inputUserAbout"></textarea></div>
+						</div>
+						<div class="right">
+							<div class="preview">
+								<div class="banner" :style="(userSettingAttrs.userColorEdit ? 'background-color:' + userSettingAttrs.userColorEdit + ';' : '') + (userSettingAttrs.userBannerEdit ? 'background-image:url(' + userSettingAttrs.userBannerEdit + ');' : '')"></div>
+								<div class="head">
+									<div class="avatar">
+										<img class="img" :src="user && user.avatar ? user.avatar : './assets/img/user_avatar.png'"></img>
+										<img class="nft-icon" style="top:4px;left:4px;width:24px;height:24px;" v-if="user && user.nftavatar.value==1" src="./assets/img/nft_icon.png" />
+										<span class="indicate" :class="{'online':user && user.aliveStatus.value==1,'idle':user && user.aliveStatus.value==2,'busy':user && user.aliveStatus.value==4,'hide':user && user.aliveStatus.value==8}"></span>
+									</div>
+								</div>
+								<div class="nickname" v-text="user ? user.nickname : ''"></div>
+								<div class="body">
+									<div class="sep"></div>
+									<div class="memo" v-t="'userSetting.userSettings.aboutMe'"></div>
+									<div class="memo about" v-text="user && user.about ? user.about : '_'"></div>
+									<div class="memo" v-t="'userSetting.userSettings.customing'"></div>
+									<div class="edit-info">
+										<div class="ico"><img class="img" src="./assets/img/edit_pen.png" /></div>
+										<div class="edi" v-t="'userSetting.userSettings.userProfile'"></div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="save-opers" v-if="userSettingAttrs.profileUnsaved">
+					<div class="holder">
+						<div class="care" v-t="'common.care'">Careful - you have unsaved changes!</div>
+						<div class="oper reset"><button class="button" v-t="'common.reset'" @click="clickUserSettingResetProfile"></button></div>
+						<div class="oper save"><button class="button positive-button" v-t="'common.save'" @click="clickUserSettingSaveProfile"></button></div>
+					</div>
+				</div>
+			</div>
+			<div class="body-item safety" :class="{'active': userSettingItem=='safety'}">
+				<div class="seg">
+					<div class="title" v-t="'userSetting.userSettings.privacySafety'"></div>
+					<div class="memo" v-t="'userSetting.userSettings.safeWhisper'"></div>
+					<div class="desc" v-t="'userSetting.userSettings.scanMode'"></div>
+					<div class="radio-group content-safe">
+						<div class="radio-item green active">
+							<div class="radio-holder">
+								<div class="radio"><div class="core"></div></div>
+								<div class="label">
+									<div class="main-text" v-t="'userSetting.userSettings.scanEveryoneTitle'"></div>
+									<div class="sub-text" v-t="'userSetting.userSettings.scanEveryoneDesc'"></div>
+								</div>
+							</div>
+						</div>
+						<div class="radio-item yellow">
+							<div class="radio-holder">
+								<div class="radio"><div class="core"></div></div>
+								<div class="label">
+									<div class="main-text" v-t="'userSetting.userSettings.scanPeopleTitle'"></div>
+									<div class="sub-text" v-t="'userSetting.userSettings.scanPeopleDesc'"></div>
+								</div>
+							</div>
+						</div>
+						<div class="radio-item red">
+							<div class="radio-holder">
+								<div class="radio"><div class="core"></div></div>
+								<div class="label">
+									<div class="main-text" v-t="'userSetting.userSettings.scanNoneTitle'"></div>
+									<div class="sub-text" v-t="'userSetting.userSettings.scanNoneDesc'"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="memo" v-t="'userSetting.userSettings.domainDefaultPrivacy'"></div>
+					<div class="switch-group chat-safe">
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.userSettings.allowDomainUserWhisper'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.userSettings.allowDomainUserWhisperDesc'"></div>
+						</div>
+						<div class="switch-item" v-if="false">
+							<div class="prime">
+								<div class="text"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="false" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append"></div>
+						</div>
+					</div>
+					<div class="memo" v-t="'userSetting.userSettings.sendFriendInviteMode'"></div>
+					<div class="switch-group friend-safe">
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.userSettings.sendFriendInviteAll'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.userSettings.sendFriendInviteFriend'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.userSettings.sendFriendInviteDomain'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+					</div>
+					<div class="memo" v-t="'userSetting.userSettings.richPresence'"></div>
+					<div class="switch-group rich-safe">
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.userSettings.allowFriendJoinGame'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.userSettings.allowFriendJoinGameDesc'"></div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.userSettings.allowAudiorJoinGame'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="false" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.userSettings.allowAudiorJoinGameDesc'"></div>
+						</div>
+					</div>
+					<div class="contract">
+						<div class="content" v-html="$t('userSetting.userSettings.privacyAgreement')"></div>
+					</div>
+				</div>
+			</div>
+			<div class="body-item oauth" :class="{'active': userSettingItem=='oauth'}">
+				<div class="seg">
+					<div class="title"></div>
+				</div>
+			</div>
+			<div class="body-item connection" :class="{'active': userSettingItem=='connection'}">
+				<div class="seg">
+					<div class="title"></div>
+				</div>
+			</div>
+			<div class="body-item nitro" :class="{'active': userSettingItem=='nitro'}">
+				<div class="seg">
+					<div class="title" v-t="'userSetting.billingSettings.nitro'"></div>
+					<div class="banner">
+						<div class="head" v-t="'userSetting.billingSettings.nitro'"></div>
+						<div class="custom" v-t="'userSetting.billingSettings.customize'"></div>
+						<div class="upgrade" v-t="'userSetting.billingSettings.customizeDesc'"></div>
+						<div class="pay">
+							<button class="pay-button subscribe"><i class="icon gem"></i><span v-t="'userSetting.billingSettings.subscribe'"></span></button>
+							<button class="pay-button handsel"><i class="icon gift"></i><span v-t="'userSetting.billingSettings.gift'"></span></button>
+						</div>
+					</div>
+					<div class="title" v-t="'userSetting.billingSettings.benifits'"></div>
+					<div class="features">
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#e292aa" v-t="'userSetting.billingSettings.multiProfiles'"></div>
+								<div class="text" v-t="'userSetting.billingSettings.multiProfilesDesc'"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature01.png" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#fb5fdc" v-t="'userSetting.billingSettings.moreBackgrounds'"></div>
+								<div class="text" v-t="'userSetting.billingSettings.moreBackgroundsDesc'"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature02.svg" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#00e0a7" v-t="'userSetting.billingSettings.styleProfile'"></div>
+								<div class="text" v-t="'userSetting.billingSettings.styleProfileDesc'"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature03.png" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#5c87ff" v-t="'userSetting.billingSettings.sepcialStickers'"></div>
+								<div class="text" v-t="'userSetting.billingSettings.sepcialStickersDesc'"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature04.svg" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#ffa600" v-t="'userSetting.billingSettings.moreEmoji'"></div>
+								<div class="text" v-t="'userSetting.billingSettings.moreEmojiDesc'"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature05.svg" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#5c87ff" v-t="'userSetting.billingSettings.supportDomain'"></div>
+								<div class="text" v-t="'userSetting.billingSettings.supportDomainDesc'"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature06.svg" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#ffafff" v-t="'userSetting.billingSettings.repStatus'"></div>
+								<div class="text" v-t="'userSetting.billingSettings.repStatusDesc'"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature07.png" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#776bff" v-t="'userSetting.billingSettings.biggerUploads'"></div>
+								<div class="text" v-t="'userSetting.billingSettings.biggerUploadsDesc'"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature08.png" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#fa4e89" v-t="'userSetting.billingSettings.hdVideo'"></div>
+								<div class="text" v-t="'userSetting.billingSettings.hdVideoDesc'"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature09.png" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#ffd836" v-t="'userSetting.billingSettings.lognerMessage'"></div>
+								<div class="text" v-t="'userSetting.billingSettings.lognerMessageDesc'"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature10.svg" /></div>
+							</div>
+						</div>
+						<div class="holder">
+							<div class="feature">
+								<div class="head" style="color:#a57ef8" v-t="'userSetting.billingSettings.moreServers'"></div>
+								<div class="text" v-t="'userSetting.billingSettings.moreServersDesc'"></div>
+								<div class="image"><img class="img" src="./assets/img/nitro_feature11.png" /></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="body-item boost" :class="{'active': userSettingItem=='boost'}">
+				<div class="seg">
+					<div class="title" v-t="'userSetting.billingSettings.domainBoost'"></div>
+					<div class="sep"></div>
+					<div class="marketing"><div class="head">SERVER BOOST</div><i class="head-img"></i></div>
+					<div class="m-desc-1" v-t="'userSetting.billingSettings.serverBoostDesc'"></div>
+					<div class="m-desc-2" v-t="'userSetting.billingSettings.serverBoostMemo'"></div>
+					<div class="profit-head" v-t="'userSetting.billingSettings.boostUserBenifits'"></div>
+					<div class="profits">
+						<div class="profit">
+							<svg class="profit-svg" style="color:rgb(255, 115, 250)" width="24" height="24" viewBox="0 0 8 12"><path d="M4 0L0 4V8L4 12L8 8V4L4 0ZM7 7.59L4 10.59L1 7.59V4.41L4 1.41L7 4.41V7.59Z" fill="currentColor"></path><path d="M2 4.83V7.17L4 9.17L6 7.17V4.83L4 2.83L2 4.83Z" fill="currentColor"></path></svg>
+							<div class="profit-text" v-t="'userSetting.billingSettings.memberIcon'"></div>
+						</div>
+						<div class="profit">
+							<div class="profit-img" style="background-image:url(./assets/img/boost_badge.svg)"></div>
+							<div class="profit-text" v-t="'userSetting.billingSettings.shinyBadge'"></div>
+						</div>
+						<div class="profit">
+							<svg class="profit-svg" style="color:rgb(250, 168, 26)" width="20" height="23" viewBox="0 0 20 23"><g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M19.487 5.126L10.487 0.126C10.184 -0.042 9.81798 -0.042 9.51498 0.126L0.514977 5.126C0.197977 5.302 0.000976562 5.636 0.000976562 5.999C0.000976562 6.693 0.114977 22.999 10.001 22.999C19.887 22.999 20.001 6.693 20.001 5.999C20.001 5.636 19.804 5.302 19.487 5.126ZM10.001 5.999C11.382 5.999 12.501 7.118 12.501 8.499C12.501 9.88 11.382 10.999 10.001 10.999C8.61998 10.999 7.50098 9.88 7.50098 8.499C7.50098 7.118 8.61998 5.999 10.001 5.999ZM6.25098 16C6.25098 13.699 7.69998 12.25 10.001 12.25C12.302 12.25 13.751 13.699 13.751 16H6.25098Z"></path></g></svg>
+							<div class="profit-text" v-t="'userSetting.billingSettings.newRole'"></div>
+						</div>
+					</div>
+					<div class="profit-head" v-t="'userSetting.billingSettings.boostDomainBenifits'"></div>
+					<div class="profits">
+						<div class="profit">
+							<svg class="profit-svg" style="color:rgb(121, 131, 245)" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.477 2 2 6.477 2 12C2 17.522 6.477 22 12 22C17.523 22 22 17.522 22 12C22 6.477 17.523 2 12 2ZM8 6C9.104 6 10 6.896 10 8C10 9.105 9.104 10 8 10C6.896 10 6 9.105 6 8C6 6.896 6.896 6 8 6ZM18 14C18 16.617 15.14 19 12 19C8.86 19 6 16.617 6 14V13H18V14ZM16 10C14.896 10 14 9.105 14 8C14 6.896 14.896 6 16 6C17.104 6 18 6.896 18 8C18 9.105 17.104 10 16 10Z"></path></svg>
+							<div class="profit-text" v-t="'userSetting.billingSettings.moreEmoji'"></div>
+						</div>
+						<div class="profit">
+							<svg class="profit-svg" style="color:rgb(208, 154, 255)" width="24" height="24" viewBox="0 0 24 24"><path d="M13.8003 3.59643V7.86267C13.8003 9.15683 14.8448 10.2011 16.1393 10.2011H20.4067C20.9334 10.2011 21.2012 9.56739 20.8263 9.19253L14.8091 3.17694C14.4341 2.80208 13.8003 3.06092 13.8003 3.59643Z" fill="currentColor"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M11.9727 7.88073C11.9727 10.1692 13.8304 12.0269 16.1189 12.0269H20.9471V19.2064C20.9471 20.1936 20.1394 21.0013 19.1523 21.0013H4.79318C3.80599 21.0013 2.99829 20.1936 2.99829 19.2064V4.84737C2.99829 3.86019 3.80599 3.05249 4.79318 3.05249H11.9727V7.88073ZM13.8 14C13.8 14.9941 12.9941 15.8 12 15.8C11.0059 15.8 10.2 14.9941 10.2 14H9C9 15.6569 10.3431 17 12 17C13.6569 17 15 15.6569 15 14H13.8ZM7 15C7 15.5523 6.55228 16 6 16C5.44772 16 5 15.5523 5 15C5 14.4477 5.44772 14 6 14C6.55228 14 7 14.4477 7 15ZM18 16C18.5523 16 19 15.5523 19 15C19 14.4477 18.5523 14 18 14C17.4477 14 17 14.4477 17 15C17 15.5523 17.4477 16 18 16Z" fill="currentColor"></path></svg>
+							<div class="profit-text" v-t="'userSetting.billingSettings.moreSticker'"></div>
+						</div>
+						<div class="profit">
+							<svg class="profit-svg" style="color:rgb(46, 141, 214)" width="24" height="24" viewBox="0 0 24 24"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 2.00305C6.486 2.00305 2 6.48805 2 12.0031V20.0031C2 21.1071 2.895 22.0031 4 22.0031H6C7.104 22.0031 8 21.1071 8 20.0031V17.0031C8 15.8991 7.104 15.0031 6 15.0031H4V12.0031C4 7.59105 7.589 4.00305 12 4.00305C16.411 4.00305 20 7.59105 20 12.0031V15.0031H18C16.896 15.0031 16 15.8991 16 17.0031V20.0031C16 21.1071 16.896 22.0031 18 22.0031H20C21.104 22.0031 22 21.1071 22 20.0031V12.0031C22 6.48805 17.514 2.00305 12 2.00305Z" fill="currentColor"></path></svg></svg>
+							<div class="profit-text" v-t="'userSetting.billingSettings.betterVoiceQuality'"></div>
+						</div>
+						<div class="profit">
+							<svg class="profit-svg" style="color:rgb(255, 128, 244)" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M11.2137 2.00088L2.27111 13.3826C1.9299 13.8168 2.00535 14.4455 2.43963 14.7867C2.61581 14.9251 2.83338 15.0004 3.05744 15.0004H7V21.0004C7 21.5527 7.44772 22.0004 8 22.0004H16C16.5523 22.0004 17 21.5527 17 21.0004V15.0004H20.9425C21.4948 15.0004 21.9425 14.5527 21.9425 14.0004C21.9425 13.7763 21.8673 13.5588 21.7289 13.3826L12.7863 2.00088C12.4451 1.56661 11.8165 1.49116 11.3822 1.83237C11.3195 1.88162 11.2629 1.93819 11.2137 2.00088Z"></path></svg>
+							<div class="profit-text" v-t="'userSetting.billingSettings.biggerUploadSize'"></div>
+						</div>
+						<div class="profit">
+							<svg class="profit-svg" style="color:rgb(250, 168, 26)" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M21.924 8.61789C21.77 8.24489 21.404 8.00089 21 8.00089H15.618L12.894 2.55389C12.555 1.87689 11.444 1.87689 11.105 2.55389L8.38199 8.00089H2.99999C2.59599 8.00089 2.22999 8.24489 2.07599 8.61789C1.92199 8.99089 2.00699 9.42289 2.29299 9.70789L6.87699 14.2919L5.03899 20.7269C4.92399 21.1299 5.07199 21.5619 5.40999 21.8089C5.74999 22.0569 6.20699 22.0659 6.55399 21.8329L12 18.2029L17.445 21.8329C17.613 21.9449 17.806 22.0009 18 22.0009C18.207 22.0009 18.414 21.9369 18.59 21.8089C18.928 21.5619 19.076 21.1299 18.961 20.7269L17.123 14.2919L21.707 9.70789C21.993 9.42289 22.078 8.99089 21.924 8.61789Z"></path></svg>
+							<div class="profit-text" v-t="'userSetting.billingSettings.customAvatar'"></div>
+						</div>
+						<div class="profit">
+							<svg class="profit-svg" style="color:rgb(134, 220, 197)" width="24" height="24" viewBox="0 0 24 24" fill="none"><path fill="currentColor" d="M5.43309 21C5.35842 21 5.30189 20.9325 5.31494 20.859L5.99991 17H2.14274C2.06819 17 2.01168 16.9327 2.02453 16.8593L2.33253 15.0993C2.34258 15.0419 2.39244 15 2.45074 15H6.34991L7.40991 9H3.55274C3.47819 9 3.42168 8.93274 3.43453 8.85931L3.74253 7.09931C3.75258 7.04189 3.80244 7 3.86074 7H7.75991L8.45234 3.09903C8.46251 3.04174 8.51231 3 8.57049 3H10.3267C10.4014 3 10.4579 3.06746 10.4449 3.14097L9.75991 7H15.7599L16.4523 3.09903C16.4625 3.04174 16.5123 3 16.5705 3H18.3267C18.4014 3 18.4579 3.06746 18.4449 3.14097L17.7599 7H21.6171C21.6916 7 21.7481 7.06725 21.7353 7.14069L21.4273 8.90069C21.4172 8.95811 21.3674 9 21.3091 9H17.4099L17.0495 11.04H15.05L15.4104 9H9.41035L8.35035 15H10.5599V17H7.99991L7.30749 20.901C7.29732 20.9583 7.24752 21 7.18934 21H5.43309Z"></path><path fill="currentColor" d="M13.4399 12.96C12.9097 12.96 12.4799 13.3898 12.4799 13.92V20.2213C12.4799 20.7515 12.9097 21.1813 13.4399 21.1813H14.3999C14.5325 21.1813 14.6399 21.2887 14.6399 21.4213V23.4597C14.6399 23.6677 14.8865 23.7773 15.0408 23.6378L17.4858 21.4289C17.6622 21.2695 17.8916 21.1813 18.1294 21.1813H22.5599C23.0901 21.1813 23.5199 20.7515 23.5199 20.2213V13.92C23.5199 13.3898 23.0901 12.96 22.5599 12.96H13.4399Z"></path></svg>
+							<div class="profit-text" v-t="'userSetting.billingSettings.privateThreads'"></div>
+						</div>
+					</div>
+					<div class="sep"></div>
+					<div class="ready" v-t="'userSetting.billingSettings.readyBoost'"></div>
+					<div class="ready-desc" v-html="$t('userSetting.billingSettings.readyBoostPrice')"></div>
+					<div class="ready-desc" v-t="'userSetting.billingSettings.readyBoostDesc'"></div>
+					<div class="boost-domains">
+						<div class="holder" v-for="dm in domainList" :key="dm.domainId">
+							<div class="boost-domain">
+								<div class="name" v-text="dm.name"></div>
+								<div class="counts">
+									<svg class="counts-svg" width="8" height="12" viewBox="0 0 8 12"><path d="M4 0L0 4V8L4 12L8 8V4L4 0ZM7 7.59L4 10.59L1 7.59V4.41L4 1.41L7 4.41V7.59Z" fill="currentColor"></path><path d="M2 4.83V7.17L4 9.17L6 7.17V4.83L4 2.83L2 4.83Z" fill="currentColor"></path></svg>
+									<div class="counts-value">0<span v-t="'userSetting.billingSettings.boostCount'"></span></div>
+								</div>
+								<div class="avatar">
+									<img class="avatar-img" v-if="dm.logo" :src="dm.logo" />
+									<div class="avatar-text" v-else v-text="dm.name.substring(0,1)"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="body-item subscription" :class="{'active': userSettingItem=='subscription'}">
+				<div class="seg">
+					<div class="title" v-t="'userSetting.billingSettings.yourSubscriptions'"></div>
+					<div class="describe" v-t="'userSetting.billingSettings.subscriptionDesc'"></div>
+					<div class="effective-subscription">
+						<svg class="es-icon" width="30" height="30" viewBox="0 0 40 40"><g fill="none" fill-rule="evenodd"><path fill="currentColor" fill-opacity=".8" d="M21.226 30v-4.154h-3.755V30h3.755zm-.512-8.62c3.67-1.337 5.718-2.959 5.718-6.145 0-3.272-2.36-5.235-6.088-5.235-2.589 0-4.637.825-6.344 2.048l.484 3.3c1.621-1.251 3.47-2.162 5.49-2.162 1.707 0 2.845.854 2.845 2.305 0 1.593-1.08 2.475-3.812 3.442l-.882.342.342 4.523 2.076-.455.171-1.963z"></path><rect width="38" height="38" x="1" y="1" stroke="currentColor" stroke-opacity=".4" stroke-width="2" rx="5"></rect><circle cx="7" cy="7" r="2" fill="currentColor" fill-opacity=".4"></circle><circle cx="7" cy="33" r="2" fill="currentColor" fill-opacity=".4"></circle><circle cx="33" cy="7" r="2" fill="currentColor" fill-opacity=".4"></circle><circle cx="33" cy="33" r="2" fill="currentColor" fill-opacity=".4"></circle></g></svg>
+						<div class="es-text" v-t="'userSetting.billingSettings.noactiveSubscriptions'"></div>
+					</div>
+				</div>
+				<div class="sep"></div>
+				<div class="seg">
+					<div class="title" v-t="'userSetting.billingSettings.subscriptionCredit'"></div>
+					<div class="describe" v-t="'userSetting.billingSettings.subscriptionCreditDesc'"></div>
+					<div class="effective-subscription">
+						<svg class="es-icon" width="30" height="30" viewBox="0 0 40 40"><g fill="none" fill-rule="evenodd"><path fill="currentColor" fill-opacity=".8" d="M21.226 30v-4.154h-3.755V30h3.755zm-.512-8.62c3.67-1.337 5.718-2.959 5.718-6.145 0-3.272-2.36-5.235-6.088-5.235-2.589 0-4.637.825-6.344 2.048l.484 3.3c1.621-1.251 3.47-2.162 5.49-2.162 1.707 0 2.845.854 2.845 2.305 0 1.593-1.08 2.475-3.812 3.442l-.882.342.342 4.523 2.076-.455.171-1.963z"></path><rect width="38" height="38" x="1" y="1" stroke="currentColor" stroke-opacity=".4" stroke-width="2" rx="5"></rect><circle cx="7" cy="7" r="2" fill="currentColor" fill-opacity=".4"></circle><circle cx="7" cy="33" r="2" fill="currentColor" fill-opacity=".4"></circle><circle cx="33" cy="7" r="2" fill="currentColor" fill-opacity=".4"></circle><circle cx="33" cy="33" r="2" fill="currentColor" fill-opacity=".4"></circle></g></svg>
+						<div class="es-text" v-t="'userSetting.billingSettings.nounusedCredits'"></div>
+					</div>
+				</div>
+			</div>
+			<div class="body-item gift" :class="{'active': userSettingItem=='gift'}">
+				<div class="seg">
+					<div class="title" v-t="'userSetting.billingSettings.redeemCodes'"></div>
+					<div class="memo" v-t="'userSetting.billingSettings.redeemCodesDesc'"></div>
+					<div class="excode">
+						<div class="input"><input class="text" type="text" placeholder="META-AAAAA-BBBBB-CCCCC" /></div>
+						<button class="ex-button" v-t="'userSetting.billingSettings.redeem'"></button>
+					</div>
+				</div>
+				<div class="sep"></div>
+				<div class="seg">
+					<div class="title" v-t="'userSetting.billingSettings.yourGifts'"></div>
+					<div class="empty">
+						<div class="empty-img"></div>
+						<div class="describe empty-text"></div>
+					</div>
+				</div>
+			</div>
+			<div class="body-item bill" :class="{'active': userSettingItem=='bill'}">
+				<div class="seg">
+					<div class="title" v-t="'userSetting.billingSettings.paymentMethods'"></div>
+					<div class="pay-mode">
+						<div class="pay-mode-desc">
+							<div class="pay-mode-result" v-t="'userSetting.billingSettings.noPaymentMethods'"></div>
+							<div class="pay-mode-tip" v-t="'userSetting.billingSettings.savePaymentMethod'"></div>
+						</div>
+						<div class="pay-mode-button"><button class="add-button primary-button" v-t="'userSetting.billingSettings.addPaymentMethod'"></button></div>
+					</div>
+				</div>
+				<div class="seg">
+					<div class="title" v-t="'userSetting.billingSettings.transactionHistory'"></div>
+					<div class="empty">
+						<div class="empty-img"></div>
+						<div class="describe empty-text" v-t="'userSetting.billingSettings.noTransactionHistory'"></div>
+					</div>
+				</div>
+			</div>
+			<div class="body-item appearance" :class="{'active': userSettingItem=='appearance'}">
+				<div class="seg">
+					<div class="title" v-t="'userSetting.appSettings.appearance'"></div>
+					<div class="preview comfortable" :class="{active:userSettingAttrs.appearance.style=='comfortable'}">
+						<div class="preview-item">
+							<div class="msg-item">
+								<div class="title"><div class="nickname" v-text="user ? user.nickname : ''"></div><div class="datetime" v-text="$d(new Date(), 'long')"></div></div>
+								<div class="msg-text" v-t="'userSetting.appSettings.msg1'"></div>
+								<div class="avatar"></div>
+							</div>
+						</div>
+						<div class="preview-item">
+							<div class="msg-item">
+								<div class="title"><div class="nickname" v-text="user ? user.nickname : ''"></div><div class="datetime" v-text="$d(new Date(), 'long')"></div></div>
+								<div class="msg-text" v-t="'userSetting.appSettings.msg2'"></div>
+								<div class="avatar"></div>
+							</div>
+						</div>
+						<div class="preview-item">
+							<div class="msg-item">
+								<div class="title"><div class="nickname" v-text="user ? user.nickname : ''"></div><div class="datetime" v-text="$d(new Date(), 'long')"></div></div>
+								<div class="msg-text" v-t="'userSetting.appSettings.msg3'"></div>
+								<div class="avatar"></div>
+							</div>
+						</div>
+					</div>
+					<div class="preview compact" :class="{active:userSettingAttrs.appearance.style=='compact'}">
+						<div class="preview-item">
+							<div class="msg-item">
+								<div class="datetime" v-text="$d(new Date(), 'long')"></div>
+								<div class="nickname" v-text="user ? user.nickname : ''"></div>
+								<div class="msg-text" v-t="'userSetting.appSettings.msg1'"></div>
+							</div>
+						</div>
+						<div class="preview-item">
+							<div class="msg-item">
+								<div class="datetime" v-text="$d(new Date(), 'long')"></div>
+								<div class="nickname" v-text="user ? user.nickname : ''"></div>
+								<div class="msg-text" v-t="'userSetting.appSettings.msg2'"></div>
+							</div>
+						</div>
+						<div class="preview-item">
+							<div class="msg-item">
+								<div class="datetime" v-text="$d(new Date(), 'long')"></div>
+								<div class="nickname" v-text="user ? user.nickname : ''"></div>
+								<div class="msg-text" v-t="'userSetting.appSettings.msg3'"></div>
+							</div>
+						</div>
+						<div class="preview-item">
+							<div class="msg-item">
+								<div class="datetime" v-text="$d(new Date(), 'long')"></div>
+								<div class="nickname" v-text="user ? user.nickname : ''"></div>
+								<div class="msg-text" v-t="'userSetting.appSettings.msg4'"></div>
+							</div>
+						</div>
+						<div class="preview-item">
+							<div class="msg-item">
+								<div class="datetime" v-text="$d(new Date(), 'long')"></div>
+								<div class="nickname" v-text="user ? user.nickname : ''"></div>
+								<div class="msg-text" v-t="'userSetting.appSettings.msg5'"></div>
+							</div>
+						</div>
+					</div>
+					<div class="memo" v-t="'userSetting.appSettings.theme'"></div>
+					<div class="radio-group themes">
+						<div class="radio-item theme active">
+							<div class="radio-holder">
+								<div class="radio"><div class="core"></div></div>
+								<div class="label">
+									<div class="main-text" v-t="'userSetting.appSettings.themeDark'"></div>
+								</div>
+							</div>
+						</div>
+						<div class="radio-item theme">
+							<div class="radio-holder">
+								<div class="radio"><div class="core"></div></div>
+								<div class="label">
+									<div class="main-text" v-t="'userSetting.appSettings.themeLight'"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="sep"></div>
+					<div class="memo" v-t="'userSetting.appSettings.messageDisplay'"></div>
+					<div class="radio-group msg-types">
+						<div class="radio-item msg-type active">
+							<div class="radio-holder">
+								<div class="radio"><div class="core"></div></div>
+								<div class="label">
+									<div class="main-text" v-t="'userSetting.appSettings.messageDisplayCozy'"></div>
+								</div>
+							</div>
+						</div>
+						<div class="radio-item msg-type">
+							<div class="radio-holder">
+								<div class="radio"><div class="core"></div></div>
+								<div class="label">
+									<div class="main-text" v-t="'userSetting.appSettings.messageDisplayCompact'"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="body-item accessibility" :class="{'active': userSettingItem=='accessibility'}">
+				<div class="seg">
+					<div class="title"></div>
+				</div>
+			</div>
+			<div class="body-item audiovideo" :class="{'active': userSettingItem=='audiovideo'}">
+				<div class="seg">
+					<div class="title"></div>
+				</div>
+			</div>
+			<div class="body-item textimage" :class="{'active': userSettingItem=='textimage'}">
+				<div class="seg">
+					<div class="title" v-t="'userSetting.appSettings.textImage'"></div>
+					<div class="memo" v-t="'userSetting.appSettings.displayEmojis'"></div>
+					<div class="switch-group">
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.postLinkToChat'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.uploadToRootMeta'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.appSettings.uploadToRootMetaDesc'"></div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.imageDescriptions'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="false" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.appSettings.imageDescriptionsDesc'"></div>
+						</div>
+					</div>
+					<div class="memo" v-t="'userSetting.appSettings.embedLinkPreview'"></div>
+					<div class="switch-group">
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.showEmbedLink'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+					</div>
+					<div class="memo" v-t="'userSetting.appSettings.emoji'"></div>
+					<div class="switch-group">
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.showEmoji'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.convertEmoji'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" style="display:flex;align-items:center;" v-html="$t('userSetting.appSettings.convertEmojiDesc')"><i class="icon smile" style="width:20px;height:20px;color:#f8cd64;"></i></div>
+						</div>
+					</div>
+					<div class="memo" v-t="'userSetting.appSettings.stickers'"></div>
+					<div class="switch-group">
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.stickerSuggestions'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.appSettings.stickerSuggestionsDesc'"></div>
+						</div>
+					</div>
+					<div class="memo" v-t="'userSetting.appSettings.textBox'"></div>
+					<div class="switch-group">
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.useCommands'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+					</div>
+					<div class="memo" v-t="'userSetting.appSettings.threads'"></div>
+					<div class="switch-group">
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.openThread'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+					</div>
+					<div class="memo" v-t="'userSetting.appSettings.showSpoilerContent'"></div>
+					<div class="desc" v-t="'userSetting.appSettings.showSpoilerContentDesc'"></div>
+					<div class="radio-group">
+						<div class="radio-item active">
+							<div class="radio-holder">
+								<div class="radio"><div class="core"></div></div>
+								<div class="label">
+									<div class="main-text" v-t="'userSetting.appSettings.showOnClick'"></div>
+								</div>
+							</div>
+						</div>
+						<div class="radio-item">
+							<div class="radio-holder">
+								<div class="radio"><div class="core"></div></div>
+								<div class="label">
+									<div class="main-text" v-t="'userSetting.appSettings.showOnModerate'"></div>
+								</div>
+							</div>
+						</div>
+						<div class="radio-item">
+							<div class="radio-holder">
+								<div class="radio"><div class="core"></div></div>
+								<div class="label">
+									<div class="main-text" v-t="'userSetting.appSettings.showOnAlways'"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="body-item notification" :class="{'active': userSettingItem=='notification'}">
+				<div class="seg">
+					<div class="title" v-t="'userSetting.appSettings.notifications'"></div>
+					<div class="switch-group">
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.enableNotifications'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="false" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.appSettings.enableNotifycationsDesc'"></div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.enableUnreadMessage'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.appSettings.enableUnreadMessageDesc'"></div>
+						</div>
+					</div>
+					<div class="memo" v-t="'userSetting.appSettings.inactiveTimeout'"></div>
+					<div class="dropdown inactive-range" :class="{'open':userSettingAttrs.notification.inactiveDropdown}" @click="clickNotificationInactiveDropdown">
+						<div class="control item">
+							<span class="left">
+								<span class="name" v-text="'10' + $t('userSetting.appSettings.minutes')"></span>
+							</span>
+							<span class="right">
+								<i class="icon chevron-down"></i>
+							</span>
+						</div>
+						<div class="menu">
+							<div class="item">
+								<span class="name" v-text="'1' + $t('userSetting.appSettings.minutes')"></span>
+							</div>
+							<div class="item">
+								<span class="name" v-text="'2' + $t('userSetting.appSettings.minutes')"></span>
+							</div>
+							<div class="item">
+								<span class="name" v-text="'3' + $t('userSetting.appSettings.minutes')"></span>
+							</div>
+							<div class="item">
+								<span class="name" v-text="'4' + $t('userSetting.appSettings.minutes')"></span>
+							</div>
+							<div class="item">
+								<span class="name" v-text="'5' + $t('userSetting.appSettings.minutes')"></span>
+							</div>
+							<div class="item">
+								<span class="name" v-text="'6' + $t('userSetting.appSettings.minutes')"></span>
+							</div>
+							<div class="item">
+								<span class="name" v-text="'7' + $t('userSetting.appSettings.minutes')"></span>
+							</div>
+							<div class="item">
+								<span class="name" v-text="'8' + $t('userSetting.appSettings.minutes')"></span>
+							</div>
+							<div class="item">
+								<span class="name" v-text="'9' + $t('userSetting.appSettings.minutes')"></span>
+							</div>
+							<div class="item selected">
+								<span class="name" v-text="'10' + $t('userSetting.appSettings.minutes')"></span>
+							</div>
+						</div>
+					</div>
+					<div class="desc" v-t="'userSetting.appSettings.inactiveTimeoutMemo'"></div>
+					<div class="sep"></div>
+					<div class="memo" v-t="'userSetting.appSettings.textToSpeech'"></div>
+					<div class="desc" v-t="'userSetting.appSettings.textToSpeechDesc'"></div>
+					<div class="radio-group">
+						<div class="radio-item">
+							<div class="radio-holder">
+								<div class="radio"><div class="core"></div></div>
+								<div class="label">
+									<div class="main-text" v-t="'userSetting.appSettings.forAllChannels'"></div>
+								</div>
+							</div>
+						</div>
+						<div class="radio-item">
+							<div class="radio-holder">
+								<div class="radio"><div class="core"></div></div>
+								<div class="label">
+									<div class="main-text" v-t="'userSetting.appSettings.forCurrentChannel'"></div>
+								</div>
+							</div>
+						</div>
+						<div class="radio-item active">
+							<div class="radio-holder">
+								<div class="radio"><div class="core"></div></div>
+								<div class="label">
+									<div class="main-text" v-t="'userSetting.appSettings.forNeverChannel'"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="sep"></div>
+				<div class="seg">
+					<div class="title" v-t="'userSetting.appSettings.sounds'"></div>
+					<div class="switch-group">
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.disableSounds'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="false" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.appSettings.disalbeSoundsDesc'"></div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.soundMessage'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.soundDeafen'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.soundUndefen'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.soundMute'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.soundUnmute'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.soundVoiceDisconnected'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.soundPttActivate'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.soundPttDeactivate'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.soundUserJoin'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.soundUserLeave'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.soundUserMoved'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.soundOutgoingRing'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.soundIncomingRing'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.soundStreamStartd'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.soundStreamStopped'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.soundViewerJoin'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.soundViewerLeave'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.soundInvitedToSpeak'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="seg" style="margin-top:40px;">
+					<div class="title" v-t="'userSetting.appSettings.emailNotifications'"></div>
+					<div class="switch-group">
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.communicationEmails'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.appSettings.communicationEmailsDesc'"></div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.socialEmails'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.appSettings.socialEmailsDesc'"></div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.updateEmails'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.appSettings.updateEmailsDesc'"></div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.tipEmails'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="false" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.appSettings.tipEmailsDesc'"></div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.recommendEmails'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="false" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.appSettings.recommendEmailsDesc'"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="body-item keybind" :class="{'active': userSettingItem=='keybind'}">
+				<div class="seg">
+					<div class="title"></div>
+				</div>
+			</div>
+			<div class="body-item language" :class="{'active': userSettingItem=='language'}">
+				<div class="seg">
+					<div class="title" v-t="'userSetting.appSettings.language'"></div>
+					<div class="memo" v-t="'userSetting.appSettings.selectLanguage'"></div>
+					<div class="radio-group langs">
+						<div class="radio-item lang" :class="{'active':$i18n.locale=='en'}" @click="clickLanguage('en')">
+							<div class="radio-holder">
+								<div class="radio"><div class="core"></div></div>
+								<div class="label">
+									<div class="main-text">English, US</div>
+								</div>
+								<div class="attach">
+									<div class="text" v-t="'userSetting.appSettings.englishUS'"></div>
+									<div class="image"><img class="img" src="./assets/img/lang_en_us.png" /></div>
+								</div>
+							</div>
+						</div>
+						<div class="radio-item lang" :class="{'active':$i18n.locale=='zh'}" @click="clickLanguage('zh')">
+							<div class="radio-holder">
+								<div class="radio"><div class="core"></div></div>
+								<div class="label">
+									<div class="main-text">中文</div>
+								</div>
+								<div class="attach">
+									<div class="text" v-t="'userSetting.appSettings.chineseChina'"></div>
+									<div class="image"><img class="img" src="./assets/img/lang_zh_cn.png" /></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="body-item streamer" :class="{'active': userSettingItem=='streamer'}">
+				<div class="seg">
+					<div class="title" v-t="'userSetting.appSettings.streamerMode'"></div>
+					<div class="switch-group">
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.enableStreamerMode'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="false" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.appSettings.enableStreamerModeDesc'"></div>
+						</div>
+					</div>
+					<div class="memo" v-t="'userSetting.appSettings.options'"></div>
+					<div class="switch-group">
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.hidePersonalInfo'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.appSettings.hidePersonalInfoDesc'"></div>
+						</div>
+						
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.hideInviteLinks'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.appSettings.hideInviteLinksDesc'"></div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.disableSounds'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.appSettings.disableSoundsDesc'"></div>
+						</div>
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.appSettings.disableNotifications'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.appSettings.disableNotificationsDesc'"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="body-item advanced" :class="{'active': userSettingItem=='advanced'}">
+				<div class="seg">
+					<div class="title"></div>
+				</div>
+			</div>
+			<div class="body-item activity" :class="{'active': userSettingItem=='activity'}">
+				<div class="seg">
+					<div class="title" v-t="'userSetting.activitySettings.activityStatus'"></div>
+					<div class="switch-group">
+						<div class="switch-item">
+							<div class="prime">
+								<div class="text" v-t="'userSetting.activitySettings.displayStatus'"></div>
+								<label class="switch">
+									<input type="checkbox" :checked="true" />
+									<span class="slider">
+										<i class="icon times off"></i>
+										<i class="icon check on"></i>
+									</span>
+								</label>
+							</div>
+							<div class="append" v-t="'userSetting.activitySettings.displayStatusDesc'"></div>
+						</div>
+					</div>
+					<div class="image"><img class="img" src="./assets/img/activity_status.svg" /></div>
+				</div>
+			</div>
+			<div class="body-item newly" :class="{'active': userSettingItem=='newly'}">
+				<div class="seg">
+					<div class="title"></div>
+				</div>
+			</div>
+			<div class="body-item exit"></div>
+		</div>
+		<span class="close-wrapper" @click="clickUserSettingCancel">
+			<span class="close">
+				<i class="icon times"></i>
+			</span>
+			<span class="text title">ESC</span>
+		</span>
+	</div>
+	
+	<!-- dlg-add-domain -->
+	<div class="dialog dlg-add-domain" :class="{show:addDomainDialog}">
+		<div class="content form" @click="clickShowFrame('addDomainDialog')">
+			<div class="head">
+				<div class="title" v-t="'createDomain.title'"></div>
+				<div class="close" @click="clickAddDomainCancel"><i class="icon times"></i></div>
+			</div>
+			<div class="body">
+				<div class="avatar">
+					<button class="up-button" :style="addDomain.avatar ? 'background-image:url(' + addDomain.avatar + ');background-size:cover;' : ''"><input class="file" type="file" @change="changeAddDomainAvatar" /></button>
+				</div>
+				<div class="form-item">
+					<div class="label" v-t="'createDomain.name'"></div>
+					<div class="field"><input class="text" type="text" :placeholder="$t('createDomain.nameHolder')" v-model="addDomain.name" /></div>
+				</div>
+				<div class="form-item">
+					<div class="label" v-t="'createDomain.address'"></div>
+					<div class="field"><input class="text" type="text" :placeholder="$t('createDomain.addressHolder')" v-model="addDomain.address" /></div>
+				</div>
+				<div class="form-item">
+					<div class="label" v-t="'createDomain.tag'"></div>
+					<div class="field">
+						<div class="tag-list">
+							<div class="tag" :class="{'selected':addDomain.tagId==tg.tagId}" v-for="tg in tagList" :key="tg.tagId" @click="clickAddDomainTag(tg.tagId)">
+								<i class="tag-icon" :style="'background-image:url(' + tg.logo + ')'"></i><div class="tag-label" v-text="tg.name"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="foot">
+				<button class="button primary confirm" @click="clickAddDomainConfirm"><div class="text" v-t="'createDomain.create'"></div></button>
+				<button class="button link cancel" @click="clickAddDomainCancel"><div class="text" v-t="'createDomain.cancel'"></div></button>
+			</div>
+		</div>
+	</div>
+	
+	<!-- dlg-add-whisper -->
+	<div class="dialog dlg-add-whisper" :class="{show:addWhisperDialog}">
+		<div class="content form" @click="clickShowFrame('addWhisperDialog')">
+			<div class="head">
+				<div class="title" v-t="'home.chooseWhisperFriends'"></div>
+				<div class="close" @click="clickAddWhisperCancel"><i class="icon times"></i></div>
+			</div>
+			<div class="body">
+				<div class="form-item picker">
+					<a class="link" v-for="mb in addWhisperMemberList" :key="mb.userId" @click="clickAddWhisperRemoveMember(mb.userId)"><div class="name" v-text="mb.nickname"></div><i class="icon times"></i></a>
+					<div class="field"><input class="text" type="text" :placeholder="$t('home.searchByNickname')" v-model="addWhisper.searchText" /></div>
+				</div>
+				<div class="form-item">
+					<div class="friend-list-empty" v-if="addWhisperFriendList.length==0" v-t="'home.noFriends'"></div>
+					<div class="friend-list">
+						<div class="friend-item" :class="{'selected':frd.addWhisperSelected}" v-for="frd in addWhisperFriendList" :key="frd.userId" @click="clickAddWhisperAddMember(frd.userId)">
+							<div class="avatar">
+								<img class="img" :src="frd.avatar || './assets/img/user_avatar.png'"><span class="indicate" :class="{'online':frd.aliveStatus.value==1,'hide':frd.aliveStatus.value==8 || frd.aliveStatus.value==16}"></span>
+							</div>
+							<div class="nickname" v-text="frd.nickname"></div>
+							<div class="checked"><svg class="core" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"><path fill="hsl(217, calc(var(--saturation-factor, 1) * 7.6%), 33.5%)" fill-rule="evenodd" clip-rule="evenodd" d="M8.99991 16.17L4.82991 12L3.40991 13.41L8.99991 19L20.9999 7.00003L19.5899 5.59003L8.99991 16.17Z"></path></svg></div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="foot">
+				<button class="button primary confirm" @click="clickAddWhisperConfirm"><div class="text" v-t="'home.createWhisper'"></div></button>
+				<button class="button link cancel" @click="clickAddWhisperCancel"><div class="text" v-t="'common.cancel'"></div></button>
+			</div>
+		</div>
+	</div>
+	
+	<!-- dlg-add-whisper-user -->
+	<div class="dialog dlg-add-whisper" :class="{show:addWhisperUserDialog}">
+		<div class="content form" @click="clickShowFrame('addWhisperUserDialog')">
+			<div class="head">
+				<div class="title" v-text="$t('home.chooseWhisperFriends') + ': ' + whisper.name"></div>
+				<div class="close" @click="clickAddWhisperUserCancel"><i class="icon times"></i></div>
+			</div>
+			<div class="body">
+				<div class="form-item picker">
+					<a class="link" v-for="mb in addWhisperUserMemberList" :key="mb.userId" @click="clickAddWhisperUserRemoveMember(mb.userId)"><div class="name" v-text="mb.nickname"></div><i class="icon times"></i></a>
+					<div class="field"><input class="text" type="text" :placeholder="$t('home.searchByNickname')" v-model="addWhisperUser.searchText" /></div>
+				</div>
+				<div class="form-item">
+					<div class="friend-list-empty" v-if="addWhisperUserFriendList.length==0" v-t="'home.noFriends'"></div>
+					<div class="friend-list">
+						<div class="friend-item" :class="{'selected':frd.addWhisperUserSelected}" v-for="frd in addWhisperUserFriendList" :key="frd.userId" @click="clickAddWhisperUserAddMember(frd.userId)">
+							<div class="avatar">
+								<img class="img" :src="frd.avatar || './assets/img/user_avatar.png'"><span class="indicate" :class="{'online':frd.aliveStatus.value==1,'hide':frd.aliveStatus.value==8 || frd.aliveStatus.value==16}"></span>
+							</div>
+							<div class="nickname" v-text="frd.nickname"></div>
+							<div class="checked"><svg class="core" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"><path fill="hsl(217, calc(var(--saturation-factor, 1) * 7.6%), 33.5%)" fill-rule="evenodd" clip-rule="evenodd" d="M8.99991 16.17L4.82991 12L3.40991 13.41L8.99991 19L20.9999 7.00003L19.5899 5.59003L8.99991 16.17Z"></path></svg></div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="foot">
+				<button class="button primary confirm" @click="clickAddWhisperUserConfirm"><div class="text" v-t="'home.addWhisperFriend'"></div></button>
+				<button class="button link cancel" @click="clickAddWhisperUserCancel"><div class="text" v-t="'common.cancel'"></div></button>
+			</div>
+		</div>
+	</div>
+	
+	<!-- dlg-user-info -->
+	<div class="dialog dlg-user-info" :class="{show:userInfoDialog}">
+		<div class="content" @click="clickShowFrame('userInfoDialog')">
+			<div class="info">
+				<div class="banner" :style="userInfo.user && userInfo.user.color ? 'background-color:' + userInfo.user.color : ''"></div>
+				<div class="avatar">
+					<img class="img" :src="userInfo.user && userInfo.user.avatar ? userInfo.user.avatar : './assets/img/user_avatar.png'"></img>
+					<img class="nft-icon" style="top:10px;left:10px;width:30px;height:30px;" v-if="userInfo.user && userInfo.user.nftavatar.value==1" src="./assets/img/nft_icon.png" />
+					<span class="indicate" :class="{'online':userInfo.user && userInfo.user.aliveStatus.value==1,'idle':userInfo.user && userInfo.user.aliveStatus.value==2,'busy':userInfo.user && userInfo.user.aliveStatus.value==4,'hide':userInfo.user && userInfo.user.aliveStatus.value==8}"></span>
+				</div>
+				<div class="head">
+					<div class="root-id" v-text="'Root ID: ' + (userInfo.user ? userInfo.user.code : '')"></div>
+					<div class="address" v-text="'Address: ' + (userInfo.user ? userInfo.user.deAddress.substring(0,8) + '...' + userInfo.user.deAddress.substring(userInfo.user.deAddress.length-16,userInfo.user.deAddress.length) : '')"></div>
+					<div class="tvf-value" v-text="'$' + formatAmount(userInfo.user ? userInfo.user.deAmount / 100 : 0)"></div>
+					<template v-if="!userInfo.isSelf && false">
+					<button class="positive-button msg-button" v-if="userInfo.isFriend" @click="clickUserInfoSendMessage(userInfo.user ? userInfo.user.userId : '')" v-t="'userInfo.sendMessage'"></button>
+					<button class="positive-button msg-button" v-else @click="clickUserInfoInvite(userInfo.user ? userInfo.user.userId : '')" v-t="'userInfo.sendFriendInvite'"></button>
+					</template>
+				</div>
+				<div class="nickname" v-text="userInfo.user ? userInfo.user.nickname : ''"></div>
+				<div class="body">
+					<div class="tabs">
+						<div class="tab-head">
+							<div class="tab-head-item profile" v-if="false" :class="{'active':userInfoAttrs.infoTag=='profile'}" @click="clickUserInfoTab('profile')" v-t="'userInfo.tabUserInfo'"></div>
+							<div class="tab-head-item assets" :class="{'active':userInfoAttrs.infoTag=='assets'}" @click="clickUserInfoTab('assets')" v-t="'userInfo.tabAssets'"></div>
+							<div class="tab-head-item nfts" :class="{'active':userInfoAttrs.infoTag=='nfts'}" @click="clickUserInfoTab('nfts')" v-t="'userInfo.tabNfts'"></div>
+							<div class="tab-head-item historys" :class="{'active':userInfoAttrs.infoTag=='historys'}" @click="clickUserInfoTab('historys')" v-t="'userInfo.tabHistorys'"></div>
+							<div class="tab-head-item codomains" v-if="!userInfo.isSelf" :class="{'active':userInfoAttrs.infoTag=='codomains'}" @click="clickUserInfoTab('codomains')" v-t="'userInfo.tabMutualServers'"></div>
+							<div class="tab-head-item cofriends" v-if="false" :class="{'active':userInfoAttrs.infoTag=='cofriends'}" @click="clickUserInfoTab('cofriends')"></div>
+						</div>
+						<div class="tab-body profile" :class="{'active':userInfoAttrs.infoTag=='profile'}">
+							<div class="memo" v-t="'userInfo.note'"></div>
+							<div class="remark-input">
+								<textarea class="text" :placeholder="$t('userInfo.addNote')" v-model="userInfo.userAbout"></textarea>
+							</div>
+						</div>
+						<div class="tab-body assets" :class="{'active':userInfoAttrs.infoTag=='assets'}">
+							<div class="chain-values">
+								<div class="chain-value-holder" v-for="chainBalance in chainBalances" :key="chainBalance.id">
+									<div class="chain-logo"><img class="img" :src="chainBalance.logo" /></div>
+									<div class="name-value">
+										<div class="chain-name" v-text="chainBalance.name"></div>
+										<div class="chain-value" v-text="'$ ' + formatAmount(chainBalance.amount)"></div>
+									</div>
+								</div>
+								<div class="empty" v-if="chainBalances.length==0" v-t="'userInfo.noAssets'"></div>
+							</div>
+							<div class="chain-coins" v-if="userInfo.userTokenList.length>0">
+								<div class="coin-head">
+									<div class="col col-asset" v-t="'userInfo.assetName'"></div>
+									<div class="col col-price" v-t="'userInfo.assetPrice'"></div>
+									<div class="col col-balance" v-t="'userInfo.assetCount'"></div>
+									<div class="col col-value" v-t="'userInfo.assetAmount'"></div>
+								</div>
+								<div class="coin-body">
+									<div class="row" v-for="userToken in userInfo.userTokenList" :key="userToken.tokenId">
+										<div class="col col-asset">
+											<div class="logo"><img class="coin-img" :src="userToken.token.logo" /><img class="chain-img" :src="userToken.chain.logo" /></div>
+											<div class="coin-name" v-text="userToken.token.name"></div>
+										</div>
+										<div class="col col-price" v-text="'$ ' + formatAmount(userToken.price)"></div>
+										<div class="col col-balance" v-text="userToken.count"></div>
+										<div class="col col-value" v-text="'$ ' + formatAmount(userToken.amount)"></div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="tab-body nfts" :class="{'active':userInfoAttrs.infoTag=='nfts'}">
+							<div class="nft-holders">
+								<div class="nft-holder" v-for="userNft in userInfo.userNftList" :key="userNft.userNftId">
+									<a class="nft-link" :href="userNft.sourceUrl ? userNft.sourceUrl : 'javascript:void(0)'" :target="userNft.sourceUrl ? '_' : ''">
+										<div class="nft-image">
+											<img class="nft-img" v-if="userNft.nftType.value==1" :src="userNft.contentUrl" />
+											<video class="nft-img" v-if="userNft.nftType.value==4" :src="userNft.contentUrl"></video>
+											<img class="chain-img" :src="userNft.chain.logo" />
+										</div>
+										<div class="nft-name" v-text="userNft.name"></div>
+										<div class="nft-price" v-text="'$ ' + formatAmount(userNft.price)"></div>
+									</a>
+								</div>
+								<div class="empty" v-if="userInfo.userNftList.length==0" v-t="'userInfo.noNfts'"></div>
+							</div>
+						</div>
+						<div class="tab-body historys" :class="{'active':userInfoAttrs.infoTag=='historys'}">
+							<div class="history-list">
+								<div class="his-head" v-if="userInfo.userHistoryList.length>0">
+									<div class="col col-time" v-t="'userInfo.hisTime'"></div>
+									<div class="col col-fromto" v-t="'userInfo.hisFromTo'"></div>
+									<div class="col col-amount" v-t="'userInfo.hisAmount'"></div>
+									<div class="col col-gas" v-t="'userInfo.hisGas'"></div>
+								</div>
+								<div class="his-body" v-if="userInfo.userHistoryList.length>0">
+									<div class="row" v-for="userHistory in userInfo.userHistoryList" :key="userHistory.userHistoryId">
+										<div class="col col-time txt" v-text="$d(new Date(userHistory.transactionTime.value * 1000), 'long')"></div>
+										<div class="col col-fromto">
+											<div class="address" v-text="userHistory.fromAddress.substring(0,6) + '......' + userHistory.fromAddress.substring(userHistory.fromAddress.length-8,userHistory.fromAddress.length)"></div>
+											<div class="address" v-text="userHistory.toAddress.substring(0,6) + '......' + userHistory.toAddress.substring(userHistory.toAddress.length-8,userHistory.toAddress.length)"></div>
+										</div>
+										<div class="col col-amount">
+											<div class="logo" v-if="false"><img class="token-img" :src="userHistory.token.logo" /><img class="chain-img" :src="userHistory.chain.logo" /></div>
+											<div class="txt amount" v-text="'$' + formatAmount(userHistory.tokenAmount)"></div>
+										</div>
+										<div class="col col-gas">
+											<div class="logo" v-if="false"><img class="token-img" :src="userHistory.gasToken.logo" /><img class="chain-img" :src="userHistory.chain.logo" /></div>
+											<div class="txt gas-fee"><span class="txt" v-text="userHistory.gasCount + ' ' + userHistory.gasToken.name"></span><span class="txt" v-text="' ($' + userHistory.gasAmount.toFixed(2) +  ')'"></span></div>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="empty" v-if="userInfo.userHistoryList.length==0" v-t="'userInfo.noHistorys'"></div>
+						</div>
+						<div class="tab-body codomains" :class="{'active':userInfoAttrs.infoTag=='codomains'}">
+							<div class="codomain-list">
+								<div class="codomain-item" v-for="muDomain in userInfo.mutualDomains" :key="muDomain.domainId" @click="clickUserInfoMutualDomain(muDomain.domainId)">
+									<div class="logo">
+										<img class="img" v-if="muDomain.avatar" :src="muDomain.avatar" />
+										<div class="img" v-else v-text="muDomain.name.substring(0,1)"></div>
+									</div>
+									<div class="name" v-text="muDomain.name"></div>
+								</div>
+								<div class="empty" v-if="userInfo.mutualDomains.length==0" v-t="'userInfo.noMutualServers'"></div>
+							</div>
+						</div>
+						<div class="tab-body cofriends" v-if="false" :class="{'active':userInfoAttrs.infoTag=='cofriends'}">
+							<div class="cofriend-list">
+								<div class="cofriend-item">
+									<div class="avatar">
+										<img class="img" src="./assets/img/user_avatar.png" />
+									</div>
+									<div class="name">Vikee</div>
+								</div>
+								<div class="cofriend-item">
+									<div class="avatar">
+										<div class="img">A</div>
+									</div>
+									<div class="name">Alice</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="dialog dlg-user-base" :class="{show:userBaseDialog}">
+		<div class="content form" @click="clickShowFrame('userBaseDialog')">
+			<div class="head">
+				<div class="title" v-t="'userBase.knowWell'"></div>
+				<div class="close" @click="clickUserBaseCancel"><i class="icon times"></i></div>
+			</div>
+			<div class="body">
+				<div class="form-item avatar">
+					<div class="label" v-t="'userBase.avatar'"></div>
+					<div class="field"><button class="avatar-button" :style="userBase.avatar ? 'background-image:url(' + userBase.avatar + ');background-size:cover;' : ''"><input class="file" type="file" @change="changeUserBaseAvatar" /></button></div>
+				</div>
+				<div class="form-item">
+					<div class="label" v-t="'userBase.nickname'"></div>
+					<div class="field"><input class="text" type="text" placeholder="your-nickname" v-model="userBase.nickname" /></div>
+				</div>
+			</div>
+			<div class="foot">
+				<button class="button primary confirm" @click="clickUserBaseConfirm"><div class="text" v-t="'userBase.save'"></div></button>
+				<button class="button link cancel" @click="clickUserBaseCancel"><div class="text" v-t="'userBase.skip'"></div></button>
+			</div>
+		</div>
+	</div>
+
+	<!-- dlg-user-nickname -->
+	<div class="dialog dlg-user-nickname" :class="{show:userNicknameDialog}">
+		<div class="content form" @click="clickShowFrame('userNicknameDialog')">
+			<div class="head">
+				<div class="title" v-t="'userNickname.title'"></div>
+				<div class="close" @click="clickUserNicknameCancel"><i class="icon times"></i></div>
+			</div>
+			<div class="body">
+				<div class="form-item">
+					<div class="label" v-t="'userNickname.nickname'"></div>
+					<div class="field"><input class="text" type="text" :placeholder="$t('userNickname.enterYourNickname')" v-model="userNickname.nickname" /></div>
+				</div>
+			</div>
+			<div class="foot">
+				<button class="button primary confirm" @click="clickUserNicknameConfirm"><div class="text" v-t="'userNickname.save'"></div></button>
+				<button class="button link cancel" @click="clickUserNicknameCancel"><div class="text" v-t="'userNickname.cancel'"></div></button>
+			</div>
+		</div>
+	</div>
+	
+	<!-- dlg-user-email -->
+	<div class="dialog dlg-user-email" :class="{show:userEmailDialog}">
+		<div class="content form" @click="clickShowFrame('userEmailDialog')">
+			<div class="head">
+				<div class="title" v-t="'userEmail.title'"></div>
+				<div class="close" @click="clickUserEmailCancel"><i class="icon times"></i></div>
+			</div>
+			<div class="body">
+				<div class="form-item">
+					<div class="label" v-t="'userEmail.email'"></div>
+					<div class="field"><input class="text" type="text" :placeholder="$t('userEmail.enterYourEmail')" v-model="userEmail.email" /></div>
+				</div>
+			</div>
+			<div class="foot">
+				<button class="button primary confirm" @click="clickUserEmailConfirm"><div class="text" v-t="'userEmail.save'"></div></button>
+				<button class="button link cancel" @click="clickUserEmailCancel"><div class="text" v-t="'userEmail.cancel'"></div></button>
+			</div>
+		</div>
+	</div>
+	
+	<!-- dlg-user-avatar -->
+	<div class="dialog dlg-user-avatar" :class="{show:userAvatarDialog}">
+		<div class="content form" @click="clickShowFrame('userAvatarDialog')">
+			<div class="head">
+				<div class="title" v-t="'userAvatar.title'"></div>
+				<div class="close" @click="clickUserAvatarCancel"><i class="icon times"></i></div>
+			</div>
+			<div class="body">
+				<div class="form-item avatar">
+					<div class="label" v-t="'userAvatar.avatar'"></div>
+					<div class="field"><button class="avatar-button" :style="userAvatar.avatar ? 'background-image:url(' + userAvatar.avatar + ');background-size:cover;' : ''"><input class="file" type="file" @change="changeUserAvatarAvatar" /></button></div>
+				</div>
+				<div class="form-item">
+					<div class="label" v-t="'userAvatar.useNft'"></div>
+					<div class="field nft-holders">
+						<div class="nft-holder" v-for="userNft in userNftList" v-if="userNft.nftType.value==1" :key="userNft.userNftId">
+							<a class="nft-link" href="javascript:void(0)" @click="clickUserNft(userNft.contentUrl)">
+								<div class="nft-image"><img class="nft-img" :src="userNft.contentUrl" /><img class="chain-img" :src="userNft.chain.logo" /></div>
+								<div class="nft-name" v-text="userNft.name"></div>
+								<div class="nft-price" v-text="'$ ' + userNft.price.toFixed(2)"></div>
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="foot">
+				<button class="button primary confirm" @click="clickUserAvatarConfirm"><div class="text" v-t="'userAvatar.save'"></div></button>
+				<button class="button link cancel" @click="clickUserAvatarCancel"><div class="text" v-t="'userAvatar.cancel'"></div></button>
+			</div>
+		</div>
+	</div>
+	
+	<div class="emoji-panel" :class="{'show':whisper.showReactEmoji}" :style="'top:' + whisper.reactPanelTop + 'px;' + 'right:' + whisper.reactPanelRight + 'px;'">
+		<button class="emoji" @click="clickReactEmojiItem('😀')"><div class="img">😀</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😃')"><div class="img">😃</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😄')"><div class="img">😄</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😁')"><div class="img">😁</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😆')"><div class="img">😆</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😅')"><div class="img">😅</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🤣')"><div class="img">🤣</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😂')"><div class="img">😂</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🙂')"><div class="img">🙂</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🙃')"><div class="img">🙃</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😉')"><div class="img">😉</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😊')"><div class="img">😊</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😇')"><div class="img">😇</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🥰')"><div class="img">🥰</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😍')"><div class="img">😍</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🤩')"><div class="img">🤩</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😘')"><div class="img">😘</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😗')"><div class="img">😗</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😚')"><div class="img">😚</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😙')"><div class="img">😙</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😋')"><div class="img">😋</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😛')"><div class="img">😛</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😜')"><div class="img">😜</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🤪')"><div class="img">🤪</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😝')"><div class="img">😝</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🤑')"><div class="img">🤑</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🤗')"><div class="img">🤗</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🤭')"><div class="img">🤭</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🤫')"><div class="img">🤫</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🤔')"><div class="img">🤔</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🤐')"><div class="img">🤐</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🤨')"><div class="img">🤨</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😶')"><div class="img">😶</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😑')"><div class="img">😑</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😏')"><div class="img">😏</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😒')"><div class="img">😒</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🙄')"><div class="img">🙄</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😬')"><div class="img">😬</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🤥')"><div class="img">🤥</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😌')"><div class="img">😌</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😪')"><div class="img">😪</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🤤')"><div class="img">🤤</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😴')"><div class="img">😴</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😷')"><div class="img">😷</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🤒')"><div class="img">🤒</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🤕')"><div class="img">🤕</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🤢')"><div class="img">🤢</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🤮')"><div class="img">🤮</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🤧')"><div class="img">🤧</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🥵')"><div class="img">🥵</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🥶')"><div class="img">🥶</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🥴')"><div class="img">🥴</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('😵')"><div class="img">😵</div></button>
+		<button class="emoji" @click="clickReactEmojiItem('🤠')"><div class="img">🤠</div></button>
+	</div>
+	
+	<div class="mdl-view-image" :class="{'show':viewImage}">
+		<div class="close" @click="clickViewImageClose"><i class="icon times"></i></div>
+		<div class="content">
+			<div class="view"><img class="img" :src="viewImageUrl" /></div>
+			<div class="download"><a class="link" :href="viewImagePath" :download="viewImagePath" v-t="'common.download'"></a></div>
+		</div>
+	</div>
+	
+	<div class="msg-box alert">
+		<div class="content">
+			<div class="msg">
+				<div class="head" v-text="$t('common.tips')"></div>
+				<div class="body"></div>
+			</div>
+			<div class="buttons">
+				<button class="primary-button button" @click="hideMsgBox" v-text="$t('common.ok')"></button>
+			</div>
+		</div>
+	</div>
+</div>
+<script src="./lib/vue/vue.js"></script>
+<script src="./lib/vue/vue-i18n.8.9.0.js"></script>
+<script src="./lib/vue/axios.min.js"></script>
+<script src="./lib/web3/web3.min.js"></script>
+<script src="./lib/web3/web3modal.js"></script>
+<script src="./lib/web3/web3-provider.js"></script>
+<script src="./lib/web3/ethjs.min.js"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="./assets/js/abs.js?t=38"></script>
+<script src="./assets/js/lang_en_us.js?t=38"></script>
+<script src="./assets/js/lang_zh_cn.js?t=38"></script>
+<script src="./assets/js/home.js?t=38"></script>
+
+</body>
+</html>

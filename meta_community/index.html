@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="./assets/css/abs.css?t=38">
+<link rel="stylesheet" href="./assets/css/index.css?t=38">
+<title>RootMeta</title>
+</head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1NRVYLYEEQ"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1NRVYLYEEQ');
+</script>
+<body>
+
+<div id="app" class="container">
+	<div class="header">
+		<div class="logo"></div>
+		<div class="login"><button class="button" @click="clickLogin" v-t="'index.login'"></button></div>
+	</div>
+	<div class="bodyer">
+		<div class="desc" v-t="'index.welcome'"></div>
+		<div class="slogan" v-t="'index.rootmeta'"></div>
+		<div class="login"><button class="button primary" @click="clickLogin" v-t="'index.login'"></button></div>
+	</div>
+	<div class="footer"></div>
+</div>
+<script src="./lib/vue/vue.js"></script>
+<script src="./lib/vue/vue-i18n.8.9.0.js"></script>
+<script src="./lib/vue/axios.min.js"></script>
+<script src="./lib/web3/web3.min.js"></script>
+<script src="./lib/web3/web3modal.js"></script>
+<script src="./lib/web3/web3-provider.js"></script>
+<script src="./lib/web3/ethjs.min.js"></script>
+<script src="./assets/js/abs.js?t=38"></script>
+<script src="./assets/js/lang_en_us.js?t=38"></script>
+<script src="./assets/js/lang_zh_cn.js?t=38"></script>
+<script src="./assets/js/index.js?t=38"></script>
+
+</body>
+</html>
