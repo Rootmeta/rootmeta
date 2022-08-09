@@ -4,7 +4,9 @@ We use "personal_sign" method only to idenfity that you are the owner of the add
 
 The signature code is in the frontend project, path to /meta_community/assets/js/index.js.  
 
-The Verify code is in the backend project, path to /meta_CommunityServer/src/com/meta/community/handler/AccountHandler.java.  
+The verify code is in the backend project, path to /meta_CommunityServer/src/com/meta/community/handler/AccountHandler.java.  
+
+Any doubt? be free to contact us.
 
 
 <!--
